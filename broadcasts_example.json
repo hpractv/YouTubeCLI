@@ -1,0 +1,36 @@
+{
+    "wards": [
+        {
+            "id": 1,
+            "name": "First Broadcast",
+            "broadcastStart": "8:30 am",
+            "stream": "Stream1",
+            "autoStart": true,
+            "thumbnail": "thumbnail1.png"
+        },
+        {
+            "id": 2,
+            "name": "Second Broadcast",
+            "broadcastStart": "8:30 am",
+            "stream": "Stream2",
+            "autoStart": true,
+            "thumbnail": "thumbnail2.png"
+        },
+        {
+            "id": 3,
+            "name": "Third",
+            "broadcastStart": "11:00 am",
+            "stream": "Stream2",
+            "autoStart": false,
+            "thumbnail": "thumbnail3.png"
+        },
+        {
+            "id": 4,
+            "name": "Fourth",
+            "broadcastStart": "11:00 am",
+            "stream": "Stream2",
+            "autoStart": false,
+            "thumbnail": "thumbnail4.png"
+        }
+    ]
+}

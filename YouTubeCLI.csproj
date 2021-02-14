@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>ytc</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="client_secrets.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="broadcasts.json" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
