@@ -4,8 +4,18 @@ using System.Collections.Generic;
 namespace YouTubeCLI.Commands
 {
 
-    [Command(Description = "Record changes to the repository")]
-    class Broadcast : CommandsBase
+    [Command(Description = "YouTube Command Line Interface")]
+    public class Broadcast : CommandsBase
+    {
+        public override List<string> CreateArgs()
+        {
+            var _args = new List<string>();
+            return _args;
+        }
+    }
+
+    [Command(Description = "Create broadcast(s)")]
+    public class CreateCommand : CommandsBase
     {
         [Option("-c <id>", "create ids", CommandOptionType.MultipleValue)]
         public string[] Create { get; set; }
@@ -13,15 +23,54 @@ namespace YouTubeCLI.Commands
         [Option("-ca")]
         public bool CreateAll { get; set; }
 
+
+        private Broadcast _parent { get; set; }
+
+        protected override int OnExecute(CommandLineApplication app)
+        {
+            app.ShowHelp();
+            return base.OnExecute(app);
+        }
+
         public override List<string> CreateArgs()
         {
-            var _args = new List<string>();
-            if (Create != null && Create.Length == 0)
-            {
-                _args.Add("-c requires an id");
-            }
+            var args = _parent.CreateArgs();
 
-            return _args;
+            args.Add("create");
+            args.Add("createall");
+
+            return args;
         }
+
+    }
+
+    [Command(Description = "End broadcast(s)")]
+    public class EndCommand : CommandsBase
+    {
+        [Option("-e <id>", "create ids", CommandOptionType.MultipleValue)]
+        public string[] End { get; set; }
+
+        [Option("-ea")]
+        public bool EndAAll { get; set; }
+
+
+        private Broadcast _parent { get; set; }
+
+        protected override int OnExecute(CommandLineApplication app)
+        {
+            app.ShowHelp();
+            return base.OnExecute(app);
+        }
+
+        public override List<string> CreateArgs()
+        {
+            var args = _parent.CreateArgs();
+
+            args.Add("end");
+            args.Add("endall");
+
+            return args;
+        }
+
     }
 }
