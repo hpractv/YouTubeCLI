@@ -4,27 +4,15 @@ using System.Collections.Generic;
 namespace YouTubeCLI.Commands
 {
 
-    [Command(Description = "YouTube Command Line Interface")]
-    public class Broadcast : CommandsBase
+    [Command(Description = "Create YouTube Broadcasts")]
+    class CreateCommand : CommandsBase
     {
-        public override List<string> CreateArgs()
-        {
-            var _args = new List<string>();
-            return _args;
-        }
-    }
 
-    [Command(Description = "Create broadcast(s)")]
-    public class CreateCommand : CommandsBase
-    {
-        [Option("-c <id>", "create ids", CommandOptionType.MultipleValue)]
-        public string[] Create { get; set; }
+        [Option("-a|--all <path>", Description = "Create broadcasts from a json configuration file")]
+        [FileExists]
+        public string BroadcastFile { get; set; }
 
-        [Option("-ca")]
-        public bool CreateAll { get; set; }
-
-
-        private Broadcast _parent { get; set; }
+        private YouTubeCLI Parent { get; set; }
 
         protected override int OnExecute(CommandLineApplication app)
         {
@@ -34,43 +22,15 @@ namespace YouTubeCLI.Commands
 
         public override List<string> CreateArgs()
         {
-            var args = _parent.CreateArgs();
+            var args = Parent.CreateArgs();
+            args.Add("all");
 
-            args.Add("create");
-            args.Add("createall");
-
-            return args;
-        }
-
-    }
-
-    [Command(Description = "End broadcast(s)")]
-    public class EndCommand : CommandsBase
-    {
-        [Option("-e <id>", "create ids", CommandOptionType.MultipleValue)]
-        public string[] End { get; set; }
-
-        [Option("-ea")]
-        public bool EndAAll { get; set; }
-
-
-        private Broadcast _parent { get; set; }
-
-        protected override int OnExecute(CommandLineApplication app)
-        {
-            app.ShowHelp();
-            return base.OnExecute(app);
-        }
-
-        public override List<string> CreateArgs()
-        {
-            var args = _parent.CreateArgs();
-
-            args.Add("end");
-            args.Add("endall");
+            if (BroadcastFile != null)
+            {
+                args.Add(BroadcastFile);
+            }
 
             return args;
         }
-
     }
 }
