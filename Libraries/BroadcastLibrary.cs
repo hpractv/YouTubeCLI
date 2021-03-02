@@ -4,24 +4,13 @@ using System.Text.Json;
 using YouTubeCLI.Models;
 
 namespace YouTubeCLI.Libraries {
-    public class BroadcastLibrary : LibraryBase
+    public class BroadcastLibrary
     {
-        private string _broadcastFile;
-        public BroadcastLibrary(string broadcastFile) {
-            this._broadcastFile = broadcastFile;
-        }
-
-        private Broadcasts _broadcasts;
-        public Broadcasts broadcasts {
-            get
-            {
-                if (_broadcasts == null)
-                {
-                    var _file = File.ReadAllText($@"{_directory}\{_broadcastFile}");
-                    _broadcasts = JsonSerializer.Deserialize<Broadcasts>(_file);
-                }
-                return _broadcasts;
-            }
+        public static Broadcasts GetBroadcasts(string broadcastFile)
+        {
+            var _file = File.ReadAllText($@"{broadcastFile}");
+            var _broadcasts = JsonSerializer.Deserialize<Broadcasts>(_file);
+            return _broadcasts;
         }
     }
 }

@@ -1,8 +1,11 @@
+using Google.Apis.YouTube.v3.Data;
 using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using YouTubeCLI.Libraries;
 
 namespace YouTubeCLI.Commands
@@ -51,21 +54,28 @@ namespace YouTubeCLI.Commands
             {
                 // return base.OnExecute(app);
                 Console.WriteLine("Creating Broadcasts");
-                var _youTubelibrary = new YouTubeLibrary();
-                var _broadcastsLibarary = new BroadcastLibrary(BroadcastFile);
-                Console.WriteLine($"Count: {_broadcastsLibarary.broadcasts.Items.Count()}");
+                var _broadcasts = BroadcastLibrary.GetBroadcasts(BroadcastFile);
+                var _youTube = new YouTubeLibrary(_broadcasts.user);
+                Console.WriteLine($"Count: {_broadcasts.Items.Count()}");
 
-                var _create = _broadcastsLibarary.broadcasts.Items
+                var _create = _broadcasts.Items
                     .Where(b => b.active &&
                        (string.IsNullOrWhiteSpace(b.id) ||
                          Id.Split(',').Contains(b.id)));
 
-                foreach (var _broadcast in _create)
+                if (TestMode)
+                {
+                    Console.WriteLine("Test Mode: Only the first broadcast will be created and set to private");
+                }
+                foreach (var _broadcast in _create.Take(TestMode ? 1 : _create.Count()))
                 {
                     Console.WriteLine($"{_broadcast.name}");
+                    var _buildBroadcast = Task.Run(
+                        () => _youTube.BuildBroadCast(_broadcast, TestMode),
+                        new CancellationToken());
+                    _buildBroadcast.Wait();
+                    Console.WriteLine($"{_broadcast.name} Created");
                 }
-
-
             }
             catch (Exception exc)
             {

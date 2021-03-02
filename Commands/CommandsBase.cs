@@ -10,7 +10,7 @@ namespace YouTubeCLI.Commands
         [Option(
            Template = "-t|--test-mode <value>",
            Description = "Create the broadcasts in testing mode.")]
-        public bool TestMode { get; set; }
+        internal bool TestMode { get; set; }
 
         public abstract List<string> CreateArgs();
 
