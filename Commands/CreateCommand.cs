@@ -15,9 +15,7 @@ namespace YouTubeCLI.Commands
     public class CreateCommand : CommandsBase
     {
 
-        [Required]
-        [Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
-        [FileExists]
+        [Required, FileExists, Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
         public string BroadcastFile { get; set; }
 
         [Option(
@@ -52,29 +50,41 @@ namespace YouTubeCLI.Commands
             var _success = 0;
             try
             {
-                // return base.OnExecute(app);
-                Console.WriteLine("Creating Broadcasts");
+
                 var _broadcasts = BroadcastLibrary.GetBroadcasts(BroadcastFile);
                 var _youTube = new YouTubeLibrary(_broadcasts.user);
-                Console.WriteLine($"Count: {_broadcasts.Items.Count()}");
 
-                var _create = _broadcasts.Items
+                Console.WriteLine("Creating Broadcasts");
+
+                var _active = _broadcasts.Items
                     .Where(b => b.active &&
-                       (string.IsNullOrWhiteSpace(b.id) ||
+                       (string.IsNullOrWhiteSpace(Id) ||
                          Id.Split(',').Contains(b.id)));
+
+                Console.WriteLine($"Active Broadcast Count: {_active.Count()}");
+                Console.WriteLine("==================================");
 
                 if (TestMode)
                 {
                     Console.WriteLine("Test Mode: Only the first broadcast will be created and set to private");
+                    Console.WriteLine("==================================");
                 }
-                foreach (var _broadcast in _create.Take(TestMode ? 1 : _create.Count()))
+                foreach (var _broadcast in _active.Take(TestMode ? 1 : _active.Count()))
                 {
-                    Console.WriteLine($"{_broadcast.name}");
-                    var _buildBroadcast = Task.Run(
+                    Console.WriteLine($"Creating {_broadcast.name}...");
+                    var _buildBroadcast = Task.Run<LiveBroadcastSnippet>(
                         () => _youTube.BuildBroadCast(_broadcast, TestMode),
                         new CancellationToken());
                     _buildBroadcast.Wait();
-                    Console.WriteLine($"{_broadcast.name} Created");
+                    if (_buildBroadcast.IsCompletedSuccessfully)
+                    {
+                        Console.WriteLine($"{_buildBroadcast.Result.Title} Created.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Creation Error: {_broadcast.name}");
+                    }
+                    Console.WriteLine("==================================");
                 }
             }
             catch (Exception exc)

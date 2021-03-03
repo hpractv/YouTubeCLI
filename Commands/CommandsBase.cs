@@ -1,6 +1,8 @@
 using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.Collections.Generic;
+using YouTubeCLI.Libraries;
+using YouTubeCLI.Models;
 
 namespace YouTubeCLI.Commands
 {
@@ -8,8 +10,9 @@ namespace YouTubeCLI.Commands
     public abstract class CommandsBase
     {
         [Option(
-           Template = "-t|--test-mode <value>",
-           Description = "Create the broadcasts in testing mode.")]
+           "-t|--test-mode",
+           "Create the first active broadcast with private visibility.",
+           CommandOptionType.NoValue)]
         internal bool TestMode { get; set; }
 
         public abstract List<string> CreateArgs();
@@ -17,7 +20,6 @@ namespace YouTubeCLI.Commands
         protected virtual int OnExecute(CommandLineApplication app)
         {
             var args = CreateArgs();
-
             Console.WriteLine("Result = ytc " + ArgumentEscaper.EscapeAndConcatenate(args));
             return 0;
         }

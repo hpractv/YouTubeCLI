@@ -146,15 +146,17 @@ namespace YouTubeCLI.Libraries
             var _broadcasts = await _listRequest.ExecuteAsync();
             return _broadcasts.Items;
         }
-        public async Task<IEnumerable<LinkDetails>> ListUpcomingBroadcastUrls()
+         public async Task<IEnumerable<LinkDetails>> ListBroadcastUrls(bool upcoming = false)
             => (await ListBroadcasts("id,snippet"))
-                    .Where(b => b.Snippet.ScheduledStartTime > DateTime.Now)
-                    .Select(b => new LinkDetails
+                    .Where(b => !upcoming ||
+                        (upcoming &&  b.Snippet.ScheduledStartTime > DateTime.Now))
+                   .Select(b => new LinkDetails
                     {
-                        title = b.Snippet.Title,
                         id = b.Id,
-
+                        title = b.Snippet.Title,
                     });
 
+        public async Task<IEnumerable<LinkDetails>> ListUpcomingBroadcastUrls()
+            => await ListBroadcastUrls(true);
     }
 }

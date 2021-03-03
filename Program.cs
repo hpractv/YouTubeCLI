@@ -10,6 +10,7 @@ namespace YouTubeCLI
     [VersionOptionFromMember("-v|--version", MemberName = nameof(GetVersion))]
     [Subcommand(
         typeof(CreateCommand),
+        typeof(ListCommand),
         typeof(EndCommand))]
     public class YouTubeCLI : CommandsBase
     {

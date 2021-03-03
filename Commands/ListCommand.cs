@@ -1,6 +1,11 @@
+using Google.Apis.YouTube.v3.Data;
 using McMaster.Extensions.CommandLineUtils;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
+using YouTubeCLI.Libraries;
+using YouTubeCLI.Models;
 
 namespace YouTubeCLI.Commands
 {
@@ -9,36 +14,46 @@ namespace YouTubeCLI.Commands
     public class ListCommand : CommandsBase
     {
 
-        [Required]
-        [Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
-        [FileExists]
-        public string BroadcastFile { get; set; }
+        [Required, Option("-u|--user", "Google account e-mail.", CommandOptionType.SingleValue)]
+        public string User { get; set; }
 
-         [Option("-i|--id <path>", Description = "Create broadcasts by id from a json configuration file")]
-        public string Id { get; set; }
+        [Option("-p|--upcoming", "List only upcoming broadcasts", CommandOptionType.NoValue)]
+        public bool Upcoming { get; set; }
 
         private YouTubeCLI Parent { get; set; }
 
         protected override int OnExecute(CommandLineApplication app)
         {
-            return base.OnExecute(app);
+            var _success = 0;
+            try
+            {
+                var _youTubeLibrary = new YouTubeLibrary(User);
+
+                var _broadcasts = Task.Run<IEnumerable<LinkDetails>>(() => _youTubeLibrary.ListBroadcastUrls(Upcoming));
+                _broadcasts.Wait();
+
+                Console.WriteLine($"Getting{(Upcoming ? "Upcoming" : "")} Broadcasts.");
+                foreach (var _broadcast in _broadcasts.Result)
+                {
+                    Console.WriteLine($"({_broadcast.id}) {_broadcast.title} : {_broadcast.broadcastUrl}");
+                }
+            }
+            catch (Exception _exc)
+            {
+                Console.WriteLine($"Error Listing Broadcasts: {_exc.Message}");
+                _success = 1;
+            }
+
+            return _success;
         }
 
         public override List<string> CreateArgs()
         {
             var args = Parent.CreateArgs();
-
-            if (BroadcastFile != null)
+            if (Upcoming)
             {
-                args.Add("file");
-                args.Add(BroadcastFile);
+                args.Add("upcoming");
             }
-
-            if(Id != null){
-                args.Add("id");
-                args.Add(Id);
-            }
-
             return args;
         }
     }
