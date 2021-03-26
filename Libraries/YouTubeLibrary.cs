@@ -5,35 +5,39 @@ using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.Json;
 
 using YouTubeCLI.Models;
 
 namespace YouTubeCLI.Libraries
 {
-    public class YouTubeLibrary : LibraryBase {
+    public class YouTubeLibrary : LibraryBase
+    {
         private string _user;
+        private string _credentials;
         private static YouTubeService _service;
         private const string _broadcastPart = "id,snippet,contentDetails,status,statistics";
         private const string _streamPart = "id,snippet,cdn,contentDetails,status";
-        private const string _videoPart = "contentDetails,fileDetails,id,liveStreamingDetails,localizations,player,processingDetails,recordingDetails,snippet,statistics,status,suggestions,topicDetails";
+        private const string _videoPart = "id,contentDetails,fileDetails,liveStreamingDetails,localizations,player,processingDetails,recordingDetails,snippet,statistics,status,suggestions,topicDetails";
+        private const string _searchPart = "id,snippet";
 
-        public YouTubeLibrary(string user)
-            => this._user = user;
+        public YouTubeLibrary(string user, string credentials)
+        {
+            this._user = user;
+            this._credentials = credentials;
+        }
 
         private async Task<YouTubeService> GetService()
         {
             if (_service == null)
             {
                 UserCredential credential;
-                using (var stream = new FileStream($@"{_directory}\client_secrets.json", FileMode.Open, FileAccess.Read))
+                using (var stream = new FileStream($@"{_directory}\{_credentials}", FileMode.Open, FileAccess.Read))
                 {
                     credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                         GoogleClientSecrets.Load(stream).Secrets,
@@ -142,19 +146,20 @@ namespace YouTubeCLI.Libraries
         {
             var _listRequest = service.LiveBroadcasts.List(_broadcastPart);
             _listRequest.Mine = true;
-
             var _broadcasts = await _listRequest.ExecuteAsync();
+
             return _broadcasts.Items;
         }
-         public async Task<IEnumerable<LinkDetails>> ListBroadcastUrls(bool upcoming = false)
-            => (await ListBroadcasts("id,snippet"))
-                    .Where(b => !upcoming ||
-                        (upcoming &&  b.Snippet.ScheduledStartTime > DateTime.Now))
-                   .Select(b => new LinkDetails
-                    {
-                        id = b.Id,
-                        title = b.Snippet.Title,
-                    });
+
+        public async Task<IEnumerable<LinkDetails>> ListBroadcastUrls(bool upcoming = false)
+           => (await ListBroadcasts("id,snippet"))
+                .Where(b => !upcoming ||
+                    (upcoming && b.Snippet.ScheduledStartTime > DateTime.Now))
+                .Select(b => new LinkDetails
+                {
+                    id = b.Id,
+                    title = b.Snippet.Title,
+                });
 
         public async Task<IEnumerable<LinkDetails>> ListUpcomingBroadcastUrls()
             => await ListBroadcastUrls(true);

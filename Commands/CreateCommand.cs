@@ -7,16 +7,17 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using YouTubeCLI.Libraries;
+using YouTubeCLI.Models;
 
 namespace YouTubeCLI.Commands
 {
-
     [Command(Description = "Create YouTube Broadcasts")]
-    public class CreateCommand : CommandsBase
+    public class CreateCommand : CommandsBase, IBroadcastFile
     {
-
         [Required, FileExists, Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
         public string BroadcastFile { get; set; }
+
+        public Broadcasts broadcasts { get; set; }
 
         [Option(
             Template = "-i|--id <value>",
@@ -24,7 +25,6 @@ namespace YouTubeCLI.Commands
         public string Id { get; set; }
 
         private YouTubeCLI Parent { get; set; }
-
 
         public override List<string> CreateArgs()
         {
@@ -50,13 +50,15 @@ namespace YouTubeCLI.Commands
             var _success = 0;
             try
             {
+                broadcasts = getBroadcasts(BroadcastFile);
 
-                var _broadcasts = BroadcastLibrary.GetBroadcasts(BroadcastFile);
-                var _youTube = new YouTubeLibrary(_broadcasts.user);
+                var _youTube = new YouTubeLibrary(
+                    broadcasts.user,
+                    broadcasts.credentials);
 
                 Console.WriteLine("Creating Broadcasts");
 
-                var _active = _broadcasts.Items
+                var _active = broadcasts.Items
                     .Where(b => b.active &&
                        (string.IsNullOrWhiteSpace(Id) ||
                          Id.Split(',').Contains(b.id)));

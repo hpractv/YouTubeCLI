@@ -1,4 +1,3 @@
-using Google.Apis.YouTube.v3.Data;
 using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.Collections.Generic;
@@ -11,11 +10,12 @@ namespace YouTubeCLI.Commands
 {
 
     [Command(Description = "List YouTube Broadcasts")]
-    public class ListCommand : CommandsBase
+    public class ListCommand : CommandsBase, IBroadcastFile
     {
+        [Required, FileExists, Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
+        public string BroadcastFile { get; set; }
 
-        [Required, Option("-u|--user", "Google account e-mail.", CommandOptionType.SingleValue)]
-        public string User { get; set; }
+        public Broadcasts broadcasts { get; set; }
 
         [Option("-p|--upcoming", "List only upcoming broadcasts", CommandOptionType.NoValue)]
         public bool Upcoming { get; set; }
@@ -27,15 +27,19 @@ namespace YouTubeCLI.Commands
             var _success = 0;
             try
             {
-                var _youTubeLibrary = new YouTubeLibrary(User);
+                broadcasts = getBroadcasts(BroadcastFile);
+
+                var _youTubeLibrary = new YouTubeLibrary(
+                    broadcasts.user,
+                    broadcasts.credentials);
 
                 var _broadcasts = Task.Run<IEnumerable<LinkDetails>>(() => _youTubeLibrary.ListBroadcastUrls(Upcoming));
                 _broadcasts.Wait();
 
-                Console.WriteLine($"Getting{(Upcoming ? "Upcoming" : "")} Broadcasts.");
+                Console.WriteLine($"Getting{(Upcoming ? " Upcoming" : "")} Broadcasts.");
                 foreach (var _broadcast in _broadcasts.Result)
                 {
-                    Console.WriteLine($"({_broadcast.id}) {_broadcast.title} : {_broadcast.broadcastUrl}");
+                    Console.WriteLine($"{_broadcast.title}: {_broadcast.broadcastUrl}");
                 }
             }
             catch (Exception _exc)

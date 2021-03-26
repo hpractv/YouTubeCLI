@@ -1,5 +1,6 @@
 {
     "user": "<google account email>",
+    "credentials": "<client secrets file>",
     "broadcasts": [
         {
             "id": "1",
