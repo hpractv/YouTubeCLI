@@ -10,6 +10,7 @@ namespace YouTubeCLI.Models
         public string broadcastStart { get; set; }
         public string stream { get; set; }
         public bool autoStart { get; set; }
+        public bool autoStop { get; set; }
         public string thumbnail { get; set; }
         public bool active { get; set; }
     }

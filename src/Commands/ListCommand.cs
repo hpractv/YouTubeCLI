@@ -2,6 +2,7 @@ using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Threading.Tasks;
 using YouTubeCLI.Libraries;
 using YouTubeCLI.Models;
@@ -15,6 +16,10 @@ namespace YouTubeCLI.Commands
         [Required, FileExists, Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
         public string BroadcastFile { get; set; }
 
+        [Required, FileExists, Option("-c|--client-secrets <path>", Description = "Client secrets file for authentication and authorization.")]
+        internal string ClientSecretsFile { get; set; }
+
+
         public Broadcasts broadcasts { get; set; }
 
         [Option("-p|--upcoming", "List only upcoming broadcasts", CommandOptionType.NoValue)]
@@ -27,11 +32,12 @@ namespace YouTubeCLI.Commands
             var _success = 0;
             try
             {
-                broadcasts = getBroadcasts(BroadcastFile);
+                broadcasts = getBroadcasts(BroadcastFile, ClientSecretsFile);
 
                 var _youTubeLibrary = new YouTubeLibrary(
                     broadcasts.user,
-                    broadcasts.credentials);
+                    Path.GetDirectoryName(BroadcastFile),
+                    broadcasts.clientSecretsFile);
 
                 var _broadcasts = Task.Run<IEnumerable<LinkDetails>>(() => _youTubeLibrary.ListBroadcastUrls(Upcoming));
                 _broadcasts.Wait();
@@ -53,12 +59,19 @@ namespace YouTubeCLI.Commands
 
         public override List<string> CreateArgs()
         {
-            var args = Parent.CreateArgs();
+            var _args = Parent.CreateArgs();
+
+            if (ClientSecretsFile != null)
+            {
+                _args.Add("client-secrets");
+                _args.Add(ClientSecretsFile);
+            }
+
             if (Upcoming)
             {
-                args.Add("upcoming");
+                _args.Add("upcoming");
             }
-            return args;
+            return _args;
         }
     }
 }

@@ -16,20 +16,22 @@ using YouTubeCLI.Models;
 
 namespace YouTubeCLI.Libraries
 {
-    public class YouTubeLibrary : LibraryBase
+    public class YouTubeLibrary 
     {
         private string _user;
-        private string _credentials;
+        private string _broadcastsDirectory;
+        private string _clientSecretsFile;
         private static YouTubeService _service;
         private const string _broadcastPart = "id,snippet,contentDetails,status,statistics";
         private const string _streamPart = "id,snippet,cdn,contentDetails,status";
         private const string _videoPart = "id,contentDetails,fileDetails,liveStreamingDetails,localizations,player,processingDetails,recordingDetails,snippet,statistics,status,suggestions,topicDetails";
         private const string _searchPart = "id,snippet";
 
-        public YouTubeLibrary(string user, string credentials)
+        public YouTubeLibrary(string user, string broadcastsDirectory, string clientSecretsFile)
         {
             this._user = user;
-            this._credentials = credentials;
+            this._broadcastsDirectory = broadcastsDirectory;
+            this._clientSecretsFile = clientSecretsFile;
         }
 
         private async Task<YouTubeService> GetService()
@@ -37,7 +39,7 @@ namespace YouTubeCLI.Libraries
             if (_service == null)
             {
                 UserCredential credential;
-                using (var stream = new FileStream($@"{_directory}\{_credentials}", FileMode.Open, FileAccess.Read))
+                using (var stream = new FileStream($@"{_clientSecretsFile}", FileMode.Open, FileAccess.Read))
                 {
                     credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                         GoogleClientSecrets.Load(stream).Secrets,
@@ -77,53 +79,59 @@ namespace YouTubeCLI.Libraries
         private IEnumerable<LiveStream> streams
             => _streams = _streams ?? Task.Run<IEnumerable<LiveStream>>(() => GetLiveStreams()).Result;
 
-        public async Task<LiveBroadcastSnippet> BuildBroadCast(Broadcast broadcast, bool testMode = false)
+        public async Task<IEnumerable<LiveBroadcastSnippet>> BuildBroadCast(Broadcast broadcast, int occurrences, bool testMode = false)
         {
             var _nextBroadcastDay = DateTime.Now.AddDays((7 + (broadcast.dayOfWeek - 1) - ((int)DateTime.Now.DayOfWeek))).ToShortDateString();
             var _startTime = DateTime.Parse($"{_nextBroadcastDay} {broadcast.broadcastStart}");
             var _stream = streams.Single(s => s.Snippet.Title.ToLower() == broadcast.stream.ToLower());
+            var _builtBroadcasts = new List<LiveBroadcastSnippet>();
 
-            var _lbInsertRequest = service.LiveBroadcasts.Insert(
-                new LiveBroadcast()
-                {
-                    Snippet = new LiveBroadcastSnippet()
+            for (int i = 0; i < (testMode ? 1 : occurrences); i++)
+            {
+                var _lbInsertRequest = service.LiveBroadcasts.Insert(
+                    new LiveBroadcast()
                     {
-                        Title = $"{(testMode ? "Test Mode: " : string.Empty)}{broadcast.name} Sacrament - {_nextBroadcastDay}",
-                        ScheduledStartTime = _startTime.ToUniversalTime(),
-                        ScheduledEndTime = _startTime.AddHours(1).ToUniversalTime(),
-                    },
-                    Status = new LiveBroadcastStatus()
-                    {
-                        PrivacyStatus = !testMode ? "unlisted" : "private",
-                        SelfDeclaredMadeForKids = true
-                    },
-                    ContentDetails = new LiveBroadcastContentDetails()
-                    {
-                        EnableAutoStart = broadcast.autoStart,
-                        EnableAutoStop = false,
-                        EnableDvr = false,
-                        EnableEmbed = true,
-                        RecordFromStart = true,
-                    },
-                    Kind = "youtube#liveBroadcast"
-                }, _broadcastPart);
+                        Snippet = new LiveBroadcastSnippet()
+                        {
+                            Title = $"{(testMode ? "Test Mode: " : string.Empty)}{broadcast.name} Sacrament - {_startTime.ToShortDateString()}",
+                            ScheduledStartTime = _startTime.ToUniversalTime(),
+                            ScheduledEndTime = _startTime.AddHours(1).ToUniversalTime(),
+                        },
+                        Status = new LiveBroadcastStatus()
+                        {
+                            PrivacyStatus = !testMode ? "unlisted" : "private",
+                            SelfDeclaredMadeForKids = true
+                        },
+                        ContentDetails = new LiveBroadcastContentDetails()
+                        {
+                            EnableAutoStart = broadcast.autoStart,
+                            EnableAutoStop = broadcast.autoStop,
+                            EnableDvr = false,
+                            EnableEmbed = true,
+                            RecordFromStart = true,
+                        },
+                        Kind = "youtube#liveBroadcast"
+                    }, _broadcastPart);
 
-            var _broadcast = await _lbInsertRequest.ExecuteAsync();
+                var _broadcast = await _lbInsertRequest.ExecuteAsync();
 
-            var _streamSnippet = SetStream(_broadcast.Id, _stream.Id);
+                var _streamSnippet = SetStream(_broadcast.Id, _stream.Id);
 
-            Task.WaitAll(new[] {
-                SetBroadcastThumbnail(_broadcast.Id, broadcast.thumbnail),
-                _streamSnippet
-            });
+                Task.WaitAll(new[] {
+                    SetBroadcastThumbnail(_broadcast.Id, broadcast.thumbnail),
+                        _streamSnippet
+                    });
+                _builtBroadcasts.Add(_streamSnippet.Result);
+                _startTime = _startTime.AddDays(7);
+            }
 
-            return _streamSnippet.Result;
+            return _builtBroadcasts.ToArray();
         }
         private async Task SetBroadcastThumbnail(string videoId, string thumbnail)
         {
             using (var _client = new HttpClient())
             {
-                var _thumbnail = new FileStream($"{_directory}\\{thumbnail}", FileMode.Open, FileAccess.Read);
+                var _thumbnail = new FileStream($"{_broadcastsDirectory}\\{thumbnail}", FileMode.Open, FileAccess.Read);
                 var _type = Path.GetExtension(thumbnail) switch
                 {
                     ".png" => "image/png",

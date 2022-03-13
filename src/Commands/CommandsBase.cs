@@ -10,15 +10,14 @@ namespace YouTubeCLI.Commands
     [HelpOption("-h|--help")]
     public abstract class CommandsBase
     {
-
         [Option(
            "-t|--test-mode",
            "Create the first active broadcast with private visibility.",
            CommandOptionType.NoValue)]
         internal bool TestMode { get; set; }
 
-        internal Broadcasts getBroadcasts(string broadcastFile)
-            => BroadcastLibrary.GetBroadcasts(broadcastFile);
+        internal Broadcasts getBroadcasts(string broadcastFile, string clientSecretsFile)
+            => BroadcastLibrary.GetBroadcasts(broadcastFile, clientSecretsFile);
 
         public virtual List<string> CreateArgs()
         {

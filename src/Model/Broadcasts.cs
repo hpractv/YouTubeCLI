@@ -7,7 +7,7 @@ namespace YouTubeCLI.Models
     {
         public string user { get; set; }
 
-        public string credentials { get; set; }
+        public string clientSecretsFile { get; set; }
 
         [JsonPropertyName("broadcasts")]
         public IEnumerable<Broadcast> Items { get; set; }

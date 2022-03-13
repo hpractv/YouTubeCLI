@@ -3,6 +3,7 @@ using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,12 @@ namespace YouTubeCLI.Commands
         [Required, FileExists, Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
         public string BroadcastFile { get; set; }
 
+        [Required, FileExists, Option("-c|--client-secrets <path>", Description = "Client secrets file for authentication and authorization.")]
+        internal string ClientSecretsFile { get; set; }
+
+        [Option("-o|--occurences <int>", Description = "Number of stream events to create. Defaults to 1.")]
+        internal int Occurrences { get; set; } = 1;
+
         public Broadcasts broadcasts { get; set; }
 
         [Option(
@@ -28,21 +35,30 @@ namespace YouTubeCLI.Commands
 
         public override List<string> CreateArgs()
         {
-            var args = Parent.CreateArgs();
+            var _args = Parent.CreateArgs();
 
             if (BroadcastFile != null)
             {
-                args.Add("file");
-                args.Add(BroadcastFile);
+                _args.Add("file");
+                _args.Add(BroadcastFile);
             }
 
+            if (ClientSecretsFile != null)
+            {
+                _args.Add("client-secrets");
+                _args.Add(ClientSecretsFile);
+            }
+            
+            _args.Add("occurrences");
+            _args.Add(Occurrences.ToString());
+            
             if (Id != null)
             {
-                args.Add("id");
-                args.Add(Id);
+                _args.Add("id");
+                _args.Add(Id);
             }
 
-            return args;
+            return _args;
         }
 
         protected override int OnExecute(CommandLineApplication app)
@@ -50,11 +66,12 @@ namespace YouTubeCLI.Commands
             var _success = 0;
             try
             {
-                broadcasts = getBroadcasts(BroadcastFile);
+                broadcasts = getBroadcasts(BroadcastFile, ClientSecretsFile);
 
                 var _youTube = new YouTubeLibrary(
                     broadcasts.user,
-                    broadcasts.credentials);
+                    Path.GetDirectoryName(BroadcastFile),
+                    broadcasts.clientSecretsFile);
 
                 Console.WriteLine("Creating Broadcasts");
 
@@ -74,13 +91,16 @@ namespace YouTubeCLI.Commands
                 foreach (var _broadcast in _active.Take(TestMode ? 1 : _active.Count()))
                 {
                     Console.WriteLine($"Creating {_broadcast.name}...");
-                    var _buildBroadcast = Task.Run<LiveBroadcastSnippet>(
-                        () => _youTube.BuildBroadCast(_broadcast, TestMode),
+                    var _builtBroadcast = Task.Run<IEnumerable<LiveBroadcastSnippet>>(
+                        () => _youTube.BuildBroadCast(_broadcast, Occurrences, TestMode),
                         new CancellationToken());
-                    _buildBroadcast.Wait();
-                    if (_buildBroadcast.IsCompletedSuccessfully)
+                    _builtBroadcast.Wait();
+                    if (_builtBroadcast.IsCompletedSuccessfully)
                     {
-                        Console.WriteLine($"{_buildBroadcast.Result.Title} Created.");
+                        foreach (var b in _builtBroadcast.Result)
+                        {
+                            Console.WriteLine($"{b.Title} Created.");
+                        }
                     }
                     else
                     {
