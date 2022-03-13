@@ -348,3 +348,11 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# VS Coe
+.vscode
+
+# Project specific
+client_secrets.json
+broadcasts.json
+packages-microsoft-prod.deb

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "YouTubeCLI": {
+      "commandName": "Project",
+      "commandLineArgs": "create -t --file \"C:\\Users\\hprac\\OneDrive\\Church\\Zoom Sacrament\\broadcast\\broadcasts.json\" -c \"C:\\Users\\hprac\\OneDrive\\Church\\Zoom Sacrament\\broadcast\\client_secrets.json\" -o 4"
+    }
+  }
+}
