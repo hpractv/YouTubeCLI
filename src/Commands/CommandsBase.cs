@@ -2,6 +2,7 @@ using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using YouTubeCLI.Libraries;
 using YouTubeCLI.Models;
 
@@ -16,8 +17,11 @@ namespace YouTubeCLI.Commands
            CommandOptionType.NoValue)]
         internal bool TestMode { get; set; }
 
-        internal Broadcasts getBroadcasts(string broadcastFile, string clientSecretsFile)
-            => BroadcastLibrary.GetBroadcasts(broadcastFile, clientSecretsFile);
+        internal Broadcast getBroadcast(string broadcastFile, string id)
+            => getBroadcasts(broadcastFile).Items.Single(b => b.id == id);
+
+        internal Broadcasts getBroadcasts(string broadcastFile)
+            => BroadcastLibrary.GetBroadcasts(broadcastFile);
 
         public virtual List<string> CreateArgs()
         {

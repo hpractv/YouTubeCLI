@@ -10,13 +10,12 @@ namespace YouTubeCLI
     [VersionOptionFromMember("-v|--version", MemberName = nameof(GetVersion))]
     [Subcommand(
         typeof(CreateCommand),
+        typeof(UpdateCommand),
         typeof(ListCommand),
         typeof(EndCommand))]
     public class YouTubeCLI : CommandsBase
     {
         public static void Main(string[] args) => CommandLineApplication.Execute<YouTubeCLI>(args);
-
-        public override List<string> CreateArgs() => new List<string>();
 
         private static string GetVersion()
             => typeof(YouTubeCLI).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;

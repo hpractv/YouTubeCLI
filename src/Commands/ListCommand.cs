@@ -11,14 +11,16 @@ namespace YouTubeCLI.Commands
 {
 
     [Command(Description = "List YouTube Broadcasts")]
-    public class ListCommand : CommandsBase, IBroadcastFile
+    public class ListCommand : CommandsBase, ICommandsUserCredentials, IBroadcastFile
     {
+        [Required, Option("-u|--youtube-user <string>", Description = "YouTube User Id")]
+        public string YouTubeUser { get; set; }
+
+        [Required, FileExists, Option("-c|--client-secrets <path>", Description = "Client secrets file for authentication and authorization")]
+        public string ClientSecretsFile { get; set; }
+
         [Required, FileExists, Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
         public string BroadcastFile { get; set; }
-
-        [Required, FileExists, Option("-c|--client-secrets <path>", Description = "Client secrets file for authentication and authorization.")]
-        internal string ClientSecretsFile { get; set; }
-
 
         public Broadcasts broadcasts { get; set; }
 
@@ -32,13 +34,9 @@ namespace YouTubeCLI.Commands
             var _success = 0;
             try
             {
-                broadcasts = getBroadcasts(BroadcastFile, ClientSecretsFile);
+                broadcasts = getBroadcasts(BroadcastFile);
 
-                var _youTubeLibrary = new YouTubeLibrary(
-                    broadcasts.user,
-                    Path.GetDirectoryName(BroadcastFile),
-                    broadcasts.clientSecretsFile);
-
+                var _youTubeLibrary = new YouTubeLibrary(YouTubeUser, ClientSecretsFile);
                 var _broadcasts = Task.Run<IEnumerable<LinkDetails>>(() => _youTubeLibrary.ListBroadcastUrls(Upcoming));
                 _broadcasts.Wait();
 

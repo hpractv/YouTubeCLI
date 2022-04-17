@@ -6,11 +6,10 @@ using YouTubeCLI.Models;
 namespace YouTubeCLI.Libraries {
     public class BroadcastLibrary
     {
-        public static Broadcasts GetBroadcasts(string broadcastFile, string clientSecretsFile)
+        public static Broadcasts GetBroadcasts(string broadcastFile)
         {
             var _file = File.ReadAllText($@"{broadcastFile}");
             var _broadcasts = JsonSerializer.Deserialize<Broadcasts>(_file);
-            _broadcasts.clientSecretsFile = clientSecretsFile;
             return _broadcasts;
         }
     }
