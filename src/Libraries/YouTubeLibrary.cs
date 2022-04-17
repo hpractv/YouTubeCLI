@@ -16,10 +16,11 @@ using YouTubeCLI.Models;
 
 namespace YouTubeCLI.Libraries
 {
-    public class YouTubeLibrary 
+    public enum PrivacyEnum { Private, Public, Unlisted }
+
+    public class YouTubeLibrary
     {
         private string _user;
-        private string _broadcastsDirectory;
         private string _clientSecretsFile;
         private static YouTubeService _service;
         private const string _broadcastPart = "id,snippet,contentDetails,status,statistics";
@@ -27,10 +28,9 @@ namespace YouTubeCLI.Libraries
         private const string _videoPart = "id,contentDetails,fileDetails,liveStreamingDetails,localizations,player,processingDetails,recordingDetails,snippet,statistics,status,suggestions,topicDetails";
         private const string _searchPart = "id,snippet";
 
-        public YouTubeLibrary(string user, string broadcastsDirectory, string clientSecretsFile)
+        public YouTubeLibrary(string user, string clientSecretsFile)
         {
             this._user = user;
-            this._broadcastsDirectory = broadcastsDirectory;
             this._clientSecretsFile = clientSecretsFile;
         }
 
@@ -79,28 +79,33 @@ namespace YouTubeCLI.Libraries
         private IEnumerable<LiveStream> streams
             => _streams = _streams ?? Task.Run<IEnumerable<LiveStream>>(() => GetLiveStreams()).Result;
 
-        public async Task<IEnumerable<LiveBroadcastSnippet>> BuildBroadCast(Broadcast broadcast, int occurrences, bool testMode = false)
+        public async Task<IEnumerable<LiveBroadcastInfo>> BuildBroadCast(
+            Broadcast broadcast,
+            int occurrences,
+            string thumbnailDirectory,
+            bool testMode = false)
         {
             var _nextBroadcastDay = DateTime.Now.AddDays((7 + (broadcast.dayOfWeek - 1) - ((int)DateTime.Now.DayOfWeek))).ToShortDateString();
             var _startTime = DateTime.Parse($"{_nextBroadcastDay} {broadcast.broadcastStart}");
             var _stream = streams.Single(s => s.Snippet.Title.ToLower() == broadcast.stream.ToLower());
-            var _builtBroadcasts = new List<LiveBroadcastSnippet>();
+            var _builtBroadcasts = new List<LiveBroadcastInfo>();
 
             for (int i = 0; i < (testMode ? 1 : occurrences); i++)
             {
+                var _title = $"{(testMode ? "Test Mode: " : string.Empty)}{broadcast.name} Sacrament - {_startTime.ToShortDateString()}";
                 var _lbInsertRequest = service.LiveBroadcasts.Insert(
                     new LiveBroadcast()
                     {
                         Snippet = new LiveBroadcastSnippet()
                         {
-                            Title = $"{(testMode ? "Test Mode: " : string.Empty)}{broadcast.name} Sacrament - {_startTime.ToShortDateString()}",
+                            Title = _title,
                             ScheduledStartTime = _startTime.ToUniversalTime(),
-                            ScheduledEndTime = _startTime.AddHours(1).ToUniversalTime(),
+                            ScheduledEndTime = _startTime.AddMinutes(broadcast.broadcastDurationInMinutes).ToUniversalTime(),
                         },
                         Status = new LiveBroadcastStatus()
                         {
-                            PrivacyStatus = !testMode ? "unlisted" : "private",
-                            SelfDeclaredMadeForKids = true
+                            PrivacyStatus = !testMode ? broadcast.privacy.ToString().ToLower() : "private",
+                            // SelfDeclaredMadeForKids = true // This is the only way to turn off live chat automatically
                         },
                         ContentDetails = new LiveBroadcastContentDetails()
                         {
@@ -118,20 +123,46 @@ namespace YouTubeCLI.Libraries
                 var _streamSnippet = SetStream(_broadcast.Id, _stream.Id);
 
                 Task.WaitAll(new[] {
-                    SetBroadcastThumbnail(_broadcast.Id, broadcast.thumbnail),
+                    SetBroadcastThumbnail(_broadcast.Id, thumbnailDirectory, broadcast.thumbnail),
                         _streamSnippet
                     });
-                _builtBroadcasts.Add(_streamSnippet.Result);
+                _builtBroadcasts.Add(new LiveBroadcastInfo { youTubeId = _broadcast.Id, title = _title, start = _startTime, autoStart = broadcast.autoStart, autoStop = broadcast.autoStop, privacy = broadcast.privacy });
                 _startTime = _startTime.AddDays(7);
             }
 
             return _builtBroadcasts.ToArray();
         }
-        private async Task SetBroadcastThumbnail(string videoId, string thumbnail)
+
+        public async Task UpdateBroadcast(string broadcastId, bool? autoStart, bool? autoStop, PrivacyEnum? privacy)
+        {
+            var _broadcastsRequest = service.LiveBroadcasts.List(_broadcastPart);
+            _broadcastsRequest.Id = broadcastId;
+
+            var _broadcast = (await _broadcastsRequest.ExecuteAsync())
+                .Items.Single(b => b.Id == broadcastId);
+
+            if (autoStart != null)
+            {
+                _broadcast.ContentDetails.EnableAutoStart = autoStart.Value;
+            }
+            if (autoStop != null)
+            {
+                _broadcast.ContentDetails.EnableAutoStop = autoStop.Value;
+            }
+            if (privacy != null)
+            {
+                _broadcast.Status.PrivacyStatus = privacy.ToString().ToLower();
+            }
+
+            var _updateRequest = service.LiveBroadcasts.Update(_broadcast, _broadcastPart);
+            await _updateRequest.ExecuteAsync();
+        }
+
+        private async Task SetBroadcastThumbnail(string videoId, string thumbnailDirectory, string thumbnail)
         {
             using (var _client = new HttpClient())
             {
-                var _thumbnail = new FileStream($"{_broadcastsDirectory}\\{thumbnail}", FileMode.Open, FileAccess.Read);
+                var _thumbnail = new FileStream($"{thumbnailDirectory}\\{thumbnail}", FileMode.Open, FileAccess.Read);
                 var _type = Path.GetExtension(thumbnail) switch
                 {
                     ".png" => "image/png",
