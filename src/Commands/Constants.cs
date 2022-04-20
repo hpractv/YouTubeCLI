@@ -8,7 +8,18 @@ namespace YouTubeCLI.Commands
         public const string AutoStart_COLUMN = "AutoStart";
         public const string AutoStop_COLUMN = "AutoStop";
         public const string Privacy_COLUMN = "Privacy";
+        public const string Url_COLUMN = "URL";
+        public const string Link_COLUMN = "Link";
 
-        public static string[] COLUMNS = new string[] { YouTubeId_COLUMN, Title_COLUMN, Start_COLUMN, AutoStart_COLUMN, AutoStop_COLUMN, Privacy_COLUMN };
+        public static string[] COLUMNS = new string[] {
+            YouTubeId_COLUMN,
+            Title_COLUMN,
+            Start_COLUMN,
+            AutoStart_COLUMN,
+            AutoStop_COLUMN,
+            Privacy_COLUMN,
+            Url_COLUMN,
+            Link_COLUMN
+        };
     };
 }

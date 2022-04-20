@@ -13,7 +13,7 @@ using analyticsLibrary.library;
 
 namespace YouTubeCLI.Commands
 {
-    public enum OutputOptionsEnum { SingleCsv = 1, MonthlyCsv = 2, DailyCsv = 3, HourlyCsv = 4 }
+    public enum OutputOptionsEnum { Single = 1, Monthly = 2, Daily = 3, Hourly = 4, Broadcast = 5 }
 
     [Command(Description = "Create YouTube Broadcasts")]
     public class CreateCommand : CommandsBase, ICommandsUserCredentials, IBroadcastFile
@@ -62,10 +62,11 @@ namespace YouTubeCLI.Commands
             }
 
             var output_options = new List<string>();
-            if (OutputOptions.Contains(OutputOptionsEnum.SingleCsv)) output_options.Add("SingleCsv");
-            if (OutputOptions.Contains(OutputOptionsEnum.MonthlyCsv)) output_options.Add("MonthlyCsv");
-            if (OutputOptions.Contains(OutputOptionsEnum.DailyCsv)) output_options.Add("DailyCsv");
-            if (OutputOptions.Contains(OutputOptionsEnum.HourlyCsv)) output_options.Add("HourlyCsv");
+            if (OutputOptions.Contains(OutputOptionsEnum.Single)) output_options.Add("Single");
+            if (OutputOptions.Contains(OutputOptionsEnum.Monthly)) output_options.Add("Monthly");
+            if (OutputOptions.Contains(OutputOptionsEnum.Daily)) output_options.Add("Daily");
+            if (OutputOptions.Contains(OutputOptionsEnum.Hourly)) output_options.Add("Hourly");
+            if (OutputOptions.Contains(OutputOptionsEnum.Broadcast)) output_options.Add("Broadcast");
             if (output_options.Count() > 0)
             {
                 _args.Add("output");
@@ -125,43 +126,38 @@ namespace YouTubeCLI.Commands
                 {
                     var _outputColumns = Constants.COLUMNS;
 
-                    var _outputBroadcasts = new Action<string, Func<LiveBroadcastInfo, string>>((aggregateName, aggregate) => {
+                    var _outputBroadcasts = new Action<OutputOptionsEnum, Func<LiveBroadcastInfo, string>>((aggregate, aggregateFunction) => {
                         IEnumerable<IGrouping<string, LiveBroadcastInfo>> _aggregated = null;
-                        if(aggregate == null){
+                        if(aggregateFunction == null){
                             _aggregated = _createdBroadcasts
                                 .GroupBy(b => "1 == 1");
                         } else {
                             _aggregated = _createdBroadcasts
-                                .GroupBy(b => aggregate(b));
+                                .GroupBy(b => aggregate != OutputOptionsEnum.Broadcast ? aggregateFunction(b) : $"broadcastId-{aggregateFunction(b)}");
                         }
 
                         foreach(var _g in _aggregated){
-                            var _path = Path.Combine(thumbnailDirectory, $"{(aggregateName == "ALL" ? "ALL" : _g.Key)}_broadcasts_info.csv");
+                            var _path = Path.Combine(thumbnailDirectory, $"{(aggregate == OutputOptionsEnum.Single ? "ALL" : _g.Key)}_broadcasts_info.csv");
                             _g.OrderBy(i => i.start)
-                                .Select(b => new object[] { b.youTubeId, b.title, b.start, b.autoStart, b.autoStop, b.privacy })
+                                .Select(b => new object[] { b.youTubeId, b.title, b.start, b.autoStart, b.autoStop, b.privacy, b.url, b.link })
                                 .writeCsv(Path.Combine(thumbnailDirectory, _path), _outputColumns);
                         }
                     });
 
-                    if (OutputOptions.Contains(OutputOptionsEnum.SingleCsv))
-                    {
-                        _outputBroadcasts("ALL", null);
-                    }
-
-                    if (OutputOptions.Contains(OutputOptionsEnum.MonthlyCsv))
-                    {
-                        _outputBroadcasts("MONTH", b => b.start.ToString("yyyyMM"));
-                    }
-
-                    if (OutputOptions.Contains(OutputOptionsEnum.DailyCsv))
-                    {
-                         _outputBroadcasts("DAY", b => b.start.ToString("yyyyMMdd"));
-                    }
-
-                    if (OutputOptions.Contains(OutputOptionsEnum.HourlyCsv))
-                    {
-                        _outputBroadcasts("HOUR", b => b.start.ToString("yyyyMMddhh"));
-                    }
+                    if (OutputOptions.Contains(OutputOptionsEnum.Single))
+                        _outputBroadcasts(OutputOptionsEnum.Single, null);
+                    
+                    if (OutputOptions.Contains(OutputOptionsEnum.Monthly))
+                        _outputBroadcasts(OutputOptionsEnum.Monthly, b => b.start.ToString("yyyyMM"));
+                    
+                    if (OutputOptions.Contains(OutputOptionsEnum.Daily))
+                        _outputBroadcasts(OutputOptionsEnum.Daily, b => b.start.ToString("yyyyMMdd"));
+                    
+                    if (OutputOptions.Contains(OutputOptionsEnum.Hourly))
+                        _outputBroadcasts(OutputOptionsEnum.Hourly, b => b.start.ToString("yyyyMMddhh"));
+                    
+                    if (OutputOptions.Contains(OutputOptionsEnum.Broadcast))
+                       _outputBroadcasts(OutputOptionsEnum.Broadcast, b => b.broadcast);
                 }
             }
             catch (Exception exc)
