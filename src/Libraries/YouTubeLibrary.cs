@@ -104,29 +104,35 @@ namespace YouTubeCLI.Libraries
                         },
                         Status = new LiveBroadcastStatus()
                         {
-                            PrivacyStatus = !testMode ? broadcast.privacy.ToString().ToLower() : "private",
-                            // SelfDeclaredMadeForKids = true // This is the only way to turn off live chat automatically
+                            PrivacyStatus = broadcast.privacy,
+                            // SelfDeclaredMadeForKids = true, going to disable the chat by hand and not use this flag
                         },
                         ContentDetails = new LiveBroadcastContentDetails()
                         {
                             EnableAutoStart = broadcast.autoStart,
                             EnableAutoStop = broadcast.autoStop,
                             EnableDvr = false,
-                            EnableEmbed = true,
+                            //EnableEmbed = true, // This throws an error and should default to true
                             RecordFromStart = true,
                         },
                         Kind = "youtube#liveBroadcast"
                     }, _broadcastPart);
 
                 var _broadcast = await _lbInsertRequest.ExecuteAsync();
-
                 var _streamSnippet = SetStream(_broadcast.Id, _stream.Id);
-
                 Task.WaitAll(new[] {
                     SetBroadcastThumbnail(_broadcast.Id, thumbnailDirectory, broadcast.thumbnail),
                         _streamSnippet
                     });
-                _builtBroadcasts.Add(new LiveBroadcastInfo { youTubeId = _broadcast.Id, title = _title, start = _startTime, autoStart = broadcast.autoStart, autoStop = broadcast.autoStop, privacy = broadcast.privacy });
+                _builtBroadcasts.Add(new LiveBroadcastInfo {
+                    broadcast = broadcast.id,
+                    youTubeId = _broadcast.Id,
+                    title = _title,
+                    start = _startTime,
+                    autoStart = broadcast.autoStart,
+                    autoStop = broadcast.autoStop,
+                    privacy = broadcast.privacy
+                });
                 _startTime = _startTime.AddDays(7);
             }
 
