@@ -97,7 +97,7 @@ namespace YouTubeCLI.Commands
 
                 if (TestMode)
                 {
-                    Console.WriteLine("Test Mode: Only the first broadcast will be created and set to private");
+                    Console.WriteLine("Test Mode: Only the first broadcast will be created");
                     Console.WriteLine("==================================");
                 }
                 foreach (var _broadcast in _active.Take(TestMode ? 1 : _active.Count()))
@@ -146,16 +146,16 @@ namespace YouTubeCLI.Commands
 
                     if (OutputOptions.Contains(OutputOptionsEnum.Single))
                         _outputBroadcasts(OutputOptionsEnum.Single, null);
-                    
+
                     if (OutputOptions.Contains(OutputOptionsEnum.Monthly))
                         _outputBroadcasts(OutputOptionsEnum.Monthly, b => b.start.ToString("yyyyMM"));
-                    
+
                     if (OutputOptions.Contains(OutputOptionsEnum.Daily))
                         _outputBroadcasts(OutputOptionsEnum.Daily, b => b.start.ToString("yyyyMMdd"));
-                    
+
                     if (OutputOptions.Contains(OutputOptionsEnum.Hourly))
                         _outputBroadcasts(OutputOptionsEnum.Hourly, b => b.start.ToString("yyyyMMddhh"));
-                    
+
                     if (OutputOptions.Contains(OutputOptionsEnum.Broadcast))
                        _outputBroadcasts(OutputOptionsEnum.Broadcast, b => b.broadcast);
                 }

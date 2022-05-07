@@ -112,7 +112,7 @@ namespace YouTubeCLI.Libraries
                             EnableAutoStart = broadcast.autoStart,
                             EnableAutoStop = broadcast.autoStop,
                             EnableDvr = false,
-                            //EnableEmbed = true, this throws an error and should default to true
+                            //EnableEmbed = true, // This throws an error and should default to true
                             RecordFromStart = true,
                         },
                         Kind = "youtube#liveBroadcast"
