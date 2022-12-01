@@ -16,7 +16,7 @@ A command line interface for building and managing YouTube broadcasts.
 ## Compile
 
 Build `exe`:
-`dotnet publish -r win-x64 -p:PublishSingleFile=True --self--contained false`
+`dotnet publish -r win-x64 -p:PublishSingleFile=True --self-contained false`
 
 ## Command line syntax examples
 
