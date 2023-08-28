@@ -28,12 +28,14 @@ namespace YouTubeCLI.Commands
         public string BroadcastFile { get; set; }
 
 
-
         [Option("-o|--occurences <int>", Description = "Number of stream events to create. Defaults to 1.")]
         internal int Occurrences { get; set; } = 1;
 
         [Option("-e|--output <int>", Description = "Broadcast output file")]
         internal OutputOptionsEnum[] OutputOptions { get; set; }
+
+         [Option("-p|--output-prefix <string>", Description = "Broadcast output file prefix")]
+        internal string OutputPrefix { get; set; }
 
         public Broadcasts broadcasts { get; set; }
 
@@ -71,6 +73,10 @@ namespace YouTubeCLI.Commands
             {
                 _args.Add("output");
                 _args.Add(string.Join(", ", output_options));
+            }
+            if(!string.IsNullOrWhiteSpace(OutputPrefix)){
+                _args.Add("output-prefix");
+                _args.Add(OutputPrefix);
             }
 
             return _args;
@@ -125,6 +131,7 @@ namespace YouTubeCLI.Commands
                 if (_createdBroadcasts.Any())
                 {
                     var _outputColumns = Constants.COLUMNS;
+                    var _outputPrefix = !string.IsNullOrWhiteSpace(OutputPrefix) ? $"_{OutputPrefix}" : string.Empty;
 
                     var _outputBroadcasts = new Action<OutputOptionsEnum, Func<LiveBroadcastInfo, string>>((aggregate, aggregateFunction) => {
                         IEnumerable<IGrouping<string, LiveBroadcastInfo>> _aggregated = null;
@@ -137,7 +144,8 @@ namespace YouTubeCLI.Commands
                         }
 
                         foreach(var _g in _aggregated){
-                            var _path = Path.Combine(thumbnailDirectory, $"{(aggregate == OutputOptionsEnum.Single ? "ALL" : _g.Key)}_broadcasts_info.csv");
+                            var _path = Path.Combine(thumbnailDirectory,
+                                $"{(aggregate == OutputOptionsEnum.Single ? "ALL" : _g.Key)}{_outputPrefix}_broadcasts_info.csv");
                             _g.OrderBy(i => i.start)
                                 .Select(b => new object[] { b.youTubeId, b.title, b.start, b.autoStart, b.autoStop, b.privacy, b.url, b.link })
                                 .writeCsv(Path.Combine(thumbnailDirectory, _path), _outputColumns);
