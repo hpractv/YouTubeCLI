@@ -15,13 +15,13 @@ namespace YouTubeCLI.Commands
 {
 
     [Command(Description = "Clear YouTube Authorization")]
-    public class ClearAuthCommand : CommandsBase
+    public class ClearCredentialCommand : CommandsBase
     {
         [Required, Option(
-            "-l|--clear-auth",
-            "Clear authorizaiton cache.",
+            "-l|--clear-credential",
+            "Clear authorizaiton credentials.",
             CommandOptionType.NoValue)]
-        internal bool ClearCache { get; set; }
+        internal bool ClearCredential { get; set; }
 
         private YouTubeCLI Parent { get; set; }
 
@@ -29,8 +29,8 @@ namespace YouTubeCLI.Commands
         {
             var _args = Parent.CreateArgs();
 
-            _args.Add("clear-auth");
-            _args.Add(ClearCache.ToString());
+            _args.Add("clear-credential");
+            _args.Add(ClearCredential.ToString());
 
             return _args;
         }
@@ -39,7 +39,7 @@ namespace YouTubeCLI.Commands
         {
             var _success = 0;
 
-            if (ClearCache)
+            if (ClearCredential)
             {
                 var _youTube = new YouTubeLibrary();
                 _youTube.ClearCredential();
