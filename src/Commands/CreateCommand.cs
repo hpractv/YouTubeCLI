@@ -27,20 +27,25 @@ namespace YouTubeCLI.Commands
         [Required, FileExists, Option("-f|--file <path>", Description = "Create broadcasts from a json configuration file")]
         public string BroadcastFile { get; set; }
 
-
-
         [Option("-o|--occurences <int>", Description = "Number of stream events to create. Defaults to 1.")]
         internal int Occurrences { get; set; } = 1;
 
         [Option("-e|--output <int>", Description = "Broadcast output file")]
         internal OutputOptionsEnum[] OutputOptions { get; set; }
 
-        public Broadcasts broadcasts { get; set; }
-
         [Option(
             Template = "-i|--id <value>",
             Description = "Create broadcasts by id specified in a json configuration file 'id1[,id2,id3...]'")]
         public string Id { get; set; }
+
+        [Option(
+            Template = "-s|--starts-on <value>",
+            Description = "Date to start the broadcasts on. '01/01/21' ")]
+        public DateOnly? StartsOn { get; set; }
+
+
+
+        public Broadcasts broadcasts { get; set; }
 
         private YouTubeCLI Parent { get; set; }
 
@@ -104,7 +109,7 @@ namespace YouTubeCLI.Commands
                 {
                     Console.WriteLine($"Creating {_broadcast.name}...");
                     var _builtBroadcast = Task.Run<IEnumerable<LiveBroadcastInfo>>(
-                        () => _youTube.BuildBroadCast(_broadcast, Occurrences, thumbnailDirectory, TestMode),
+                        () => _youTube.BuildBroadCast(_broadcast, Occurrences, thumbnailDirectory, StartsOn, TestMode),
                         new CancellationToken());
                     _builtBroadcast.Wait();
                     if (_builtBroadcast.IsCompletedSuccessfully)
@@ -126,17 +131,22 @@ namespace YouTubeCLI.Commands
                 {
                     var _outputColumns = Constants.COLUMNS;
 
-                    var _outputBroadcasts = new Action<OutputOptionsEnum, Func<LiveBroadcastInfo, string>>((aggregate, aggregateFunction) => {
+                    var _outputBroadcasts = new Action<OutputOptionsEnum, Func<LiveBroadcastInfo, string>>((aggregate, aggregateFunction) =>
+                    {
                         IEnumerable<IGrouping<string, LiveBroadcastInfo>> _aggregated = null;
-                        if(aggregateFunction == null){
+                        if (aggregateFunction == null)
+                        {
                             _aggregated = _createdBroadcasts
                                 .GroupBy(b => "1 == 1");
-                        } else {
+                        }
+                        else
+                        {
                             _aggregated = _createdBroadcasts
                                 .GroupBy(b => aggregate != OutputOptionsEnum.Broadcast ? aggregateFunction(b) : $"broadcastId-{aggregateFunction(b)}");
                         }
 
-                        foreach(var _g in _aggregated){
+                        foreach (var _g in _aggregated)
+                        {
                             var _path = Path.Combine(thumbnailDirectory, $"{(aggregate == OutputOptionsEnum.Single ? "ALL" : _g.Key)}_broadcasts_info.csv");
                             _g.OrderBy(i => i.start)
                                 .Select(b => new object[] { b.youTubeId, b.title, b.start, b.autoStart, b.autoStop, b.privacy, b.url, b.link })
@@ -157,7 +167,7 @@ namespace YouTubeCLI.Commands
                         _outputBroadcasts(OutputOptionsEnum.Hourly, b => b.start.ToString("yyyyMMddhh"));
 
                     if (OutputOptions.Contains(OutputOptionsEnum.Broadcast))
-                       _outputBroadcasts(OutputOptionsEnum.Broadcast, b => b.broadcast);
+                        _outputBroadcasts(OutputOptionsEnum.Broadcast, b => b.broadcast);
                 }
             }
             catch (Exception exc)

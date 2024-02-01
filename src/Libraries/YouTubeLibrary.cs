@@ -23,38 +23,52 @@ namespace YouTubeCLI.Libraries
         private string _user;
         private string _clientSecretsFile;
         private static YouTubeService _service;
+        private static UserCredential _credential;
+        private FileDataStore _fileStore;
+
         private const string _broadcastPart = "id,snippet,contentDetails,status,statistics";
         private const string _streamPart = "id,snippet,cdn,contentDetails,status";
         private const string _videoPart = "id,contentDetails,fileDetails,liveStreamingDetails,localizations,player,processingDetails,recordingDetails,snippet,statistics,status,suggestions,topicDetails";
         private const string _searchPart = "id,snippet";
 
+        public YouTubeLibrary() { }
+
         public YouTubeLibrary(string user, string clientSecretsFile)
         {
             this._user = user;
             this._clientSecretsFile = clientSecretsFile;
+            this._fileStore = new FileDataStore(this.GetType().ToString());
+        }
+
+        internal async void ClearCredential()
+        {
+           await _fileStore.ClearAsync();
         }
 
         private async Task<YouTubeService> GetService()
         {
             if (_service == null)
             {
-                UserCredential credential;
                 using (var stream = new FileStream($@"{_clientSecretsFile}", FileMode.Open, FileAccess.Read))
                 {
-                    credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                        GoogleClientSecrets.Load(stream).Secrets,
-                        // This OAuth 2.0 access scope allows for full read/write access to the
-                        // authenticated user's account.
-                        new[] { YouTubeService.Scope.Youtube },
-                        _user,
-                        CancellationToken.None,
-                        new FileDataStore(this.GetType().ToString())
-                    );
+
+                    if (_credential == null)
+                    {
+                        _credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                            GoogleClientSecrets.FromStream(stream).Secrets,
+                            // This OAuth 2.0 access scope allows for full read/write access to the
+                            // authenticated user's account.
+                            new[] { YouTubeService.Scope.Youtube },
+                            _user,
+                            CancellationToken.None,
+                            _fileStore
+                        );
+                    }
                 }
 
                 _service = new YouTubeService(new BaseClientService.Initializer()
                 {
-                    HttpClientInitializer = credential,
+                    HttpClientInitializer = _credential,
                     ApplicationName = this.GetType().ToString()
                 });
             }
@@ -83,9 +97,11 @@ namespace YouTubeCLI.Libraries
             Broadcast broadcast,
             int occurrences,
             string thumbnailDirectory,
+            DateOnly? startsOn = null,
             bool testMode = false)
         {
-            var _nextBroadcastDay = DateTime.Now.AddDays((7 + (broadcast.dayOfWeek - 1) - ((int)DateTime.Now.DayOfWeek))).ToShortDateString();
+            var _startDate = startsOn ?? DateOnly.FromDateTime(DateTime.Now);
+            var _nextBroadcastDay = _startDate.AddDays((7 + (broadcast.dayOfWeek - 1) - ((int)DateTime.Now.DayOfWeek))).ToShortDateString();
             var _startTime = DateTime.Parse($"{_nextBroadcastDay} {broadcast.broadcastStart}");
             var _stream = streams.Single(s => s.Snippet.Title.ToLower() == broadcast.stream.ToLower());
             var _builtBroadcasts = new List<LiveBroadcastInfo>();
@@ -112,7 +128,7 @@ namespace YouTubeCLI.Libraries
                             EnableAutoStart = broadcast.autoStart,
                             EnableAutoStop = broadcast.autoStop,
                             EnableDvr = false,
-                            //EnableEmbed = true, // This throws an error and should default to true
+                            EnableEmbed = true, // This throws an error and should default to true
                             RecordFromStart = true,
                         },
                         Kind = "youtube#liveBroadcast"
@@ -124,7 +140,8 @@ namespace YouTubeCLI.Libraries
                     SetBroadcastThumbnail(_broadcast.Id, thumbnailDirectory, broadcast.thumbnail),
                         _streamSnippet
                     });
-                _builtBroadcasts.Add(new LiveBroadcastInfo {
+                _builtBroadcasts.Add(new LiveBroadcastInfo
+                {
                     broadcast = broadcast.id,
                     youTubeId = _broadcast.Id,
                     title = _title,

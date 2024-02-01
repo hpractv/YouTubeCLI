@@ -3,7 +3,9 @@
   <PropertyGroup>
     <AssemblyName>ytc</AssemblyName>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
+    <StartupObject>YouTubeCLI.YouTubeCLI</StartupObject>
+    <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="client_secrets.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="broadcasts.json" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
