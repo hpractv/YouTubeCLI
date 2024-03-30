@@ -43,8 +43,6 @@ namespace YouTubeCLI.Commands
             Description = "Date to start the broadcasts on. '01/01/21' ")]
         public DateOnly? StartsOn { get; set; }
 
-
-
         public Broadcasts broadcasts { get; set; }
 
         private YouTubeCLI Parent { get; set; }

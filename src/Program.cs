@@ -12,7 +12,8 @@ namespace YouTubeCLI
         typeof(CreateCommand),
         typeof(UpdateCommand),
         typeof(ListCommand),
-        typeof(EndCommand))]
+        typeof(EndCommand),
+        typeof(ClearCredentialCommand))]
     public class YouTubeCLI : CommandsBase
     {
         public static void Main(string[] args) => CommandLineApplication.Execute<YouTubeCLI>(args);

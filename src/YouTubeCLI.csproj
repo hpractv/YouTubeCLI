@@ -6,6 +6,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <StartupObject>YouTubeCLI.YouTubeCLI</StartupObject>
     <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>
