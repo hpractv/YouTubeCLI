@@ -48,6 +48,7 @@ jobs:
             --collect:"XPlat Code Coverage" \
             --results-directory ./TestResults \
             --logger "trx;LogFileName=test-results.trx" \
+            --logger "console;verbosity=normal" \
             --settings coverlet.runsettings
 
       - name: Generate coverage report
@@ -82,7 +83,29 @@ jobs:
             ./TestResults/
           retention-days: 30
 
-      - name: Comment coverage on PR
+      - name: Parse test results
+        id: test-results
+        run: |
+          # Parse test results from TRX file
+          if [ -f "./TestResults/test-results.trx" ]; then
+            # Extract test counts from TRX file
+            TOTAL_TESTS=$(grep -o 'total="[0-9]*"' ./TestResults/test-results.trx | grep -o '[0-9]*' | head -1)
+            PASSED_TESTS=$(grep -o 'passed="[0-9]*"' ./TestResults/test-results.trx | grep -o '[0-9]*' | head -1)
+            FAILED_TESTS=$(grep -o 'failed="[0-9]*"' ./TestResults/test-results.trx | grep -o '[0-9]*' | head -1)
+            SKIPPED_TESTS=$(grep -o 'skipped="[0-9]*"' ./TestResults/test-results.trx | grep -o '[0-9]*' | head -1)
+
+            echo "total=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+            echo "passed=$PASSED_TESTS" >> $GITHUB_OUTPUT
+            echo "failed=$FAILED_TESTS" >> $GITHUB_OUTPUT
+            echo "skipped=$SKIPPED_TESTS" >> $GITHUB_OUTPUT
+          else
+            echo "total=0" >> $GITHUB_OUTPUT
+            echo "passed=0" >> $GITHUB_OUTPUT
+            echo "failed=0" >> $GITHUB_OUTPUT
+            echo "skipped=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment test results and coverage on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
@@ -90,9 +113,17 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
+            // Get test results from step output
+            const totalTests = '${{ steps.test-results.outputs.total }}';
+            const passedTests = '${{ steps.test-results.outputs.passed }}';
+            const failedTests = '${{ steps.test-results.outputs.failed }}';
+            const skippedTests = '${{ steps.test-results.outputs.skipped }}';
+
             // Try to find coverage summary
             const coverageDir = './TestResults';
             let coverageSummary = '';
+            let lineCoverage = 0;
+            let branchCoverage = 0;
 
             try {
               const files = fs.readdirSync(coverageDir, { recursive: true });
@@ -107,30 +138,69 @@ jobs:
                 const branchRateMatch = coverageContent.match(/branch-rate="([^"]+)"/);
 
                 if (lineRateMatch && branchRateMatch) {
-                  const lineCoverage = Math.round(parseFloat(lineRateMatch[1]) * 100);
-                  const branchCoverage = Math.round(parseFloat(branchRateMatch[1]) * 100);
-
-                  coverageSummary = `## 📊 Code Coverage Report
-
-                  | Metric | Coverage |
-                  |--------|----------|
-                  | **Line Coverage** | ${lineCoverage}% |
-                  | **Branch Coverage** | ${branchCoverage}% |
-
-                  📈 Detailed coverage report is available in the workflow artifacts.`;
+                  lineCoverage = Math.round(parseFloat(lineRateMatch[1]) * 100);
+                  branchCoverage = Math.round(parseFloat(branchRateMatch[1]) * 100);
                 }
               }
             } catch (error) {
               console.log('Could not generate coverage summary:', error.message);
             }
 
-            if (coverageSummary) {
-              github.rest.issues.createComment({
+            // Create comprehensive comment
+            const testStatus = failedTests > 0 ? '❌' : '✅';
+            const coverageStatus = lineCoverage >= 80 ? '🟢' : lineCoverage >= 60 ? '🟡' : '🔴';
+
+            const commentBody = `## ${testStatus} Test Results & ${coverageStatus} Code Coverage
+
+            ### 🧪 Test Summary
+            | Metric | Count |
+            |--------|-------|
+            | **Total Tests** | ${totalTests} |
+            | **✅ Passed** | ${passedTests} |
+            | **❌ Failed** | ${failedTests} |
+            | **⏭️ Skipped** | ${skippedTests} |
+
+            ### 📊 Coverage Report
+            | Metric | Coverage |
+            |--------|----------|
+            | **Line Coverage** | ${lineCoverage}% |
+            | **Branch Coverage** | ${branchCoverage}% |
+
+            📈 Detailed coverage report is available in the workflow artifacts.
+            🔍 View the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for more details.`;
+
+            // Check for existing comments and update or create
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            // Look for existing test/coverage comment
+            const existingComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Test Results') &&
+              comment.body.includes('Code Coverage')
+            );
+
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: commentBody
+              });
+              console.log('Updated existing test results and coverage comment');
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: coverageSummary
+                body: commentBody
               });
+              console.log('Created new test results and coverage comment');
             }
 
   build-windows:
@@ -285,40 +355,94 @@ jobs:
           name: linux-executables
           path: ./artifacts/linux
 
-      - name: Create Release Archive
-        run: |
-          mkdir -p ./release
-          cp ./artifacts/windows/* ./release/
-          cp ./artifacts/macos/* ./release/
-          cp ./artifacts/linux/* ./release/
-          cd ./release
-          zip -r ../ytc-prerelease.zip ./*
-
       - name: Get PR Number
         id: pr
         run: echo "number=${{ github.event.number }}" >> $GITHUB_OUTPUT
 
+      - name: Get Version
+        id: version
+        run: |
+          # Extract version from project file
+          VERSION=$(grep -o '<Version>[^<]*</Version>' ${{ env.PROJECT_PATH }} | sed 's/<Version>//;s/<\/Version>//')
+
+          # Validate version format (semantic versioning)
+          if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: MAJOR.MINOR.PATCH[-PRERELEASE]"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Extracted version: $VERSION"
+
+          # Extract version components for validation
+          VERSION_PARTS=(${VERSION//./ })
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]%%-*}
+
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
+          echo "patch=$PATCH" >> $GITHUB_OUTPUT
+
+          # Check if it's a prerelease version
+          if [[ $VERSION == *"-"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "🔶 Prerelease version detected"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "🔷 Release version detected"
+          fi
+
+      - name: Validate Version for Pre-release
+        run: |
+          # For pre-releases, we expect the version to be a prerelease version
+          if [[ "${{ steps.version.outputs.is_prerelease }}" == "false" ]]; then
+            echo "⚠️  Warning: Creating pre-release with non-prerelease version ${{ steps.version.outputs.version }}"
+            echo "Consider using a prerelease version like ${{ steps.version.outputs.version }}-beta.1"
+          fi
+
+      - name: Rename artifacts with version
+        run: |
+          # Rename Windows artifacts
+          mv ./artifacts/windows/ytc-windows-x64.zip ./artifacts/windows/ytc-windows-x64-${{ steps.version.outputs.version }}.zip
+          mv ./artifacts/windows/ytc-windows-x86.zip ./artifacts/windows/ytc-windows-x86-${{ steps.version.outputs.version }}.zip
+
+          # Rename macOS artifacts
+          mv ./artifacts/macos/ytc-macos-arm64.zip ./artifacts/macos/ytc-macos-arm64-${{ steps.version.outputs.version }}.zip
+          mv ./artifacts/macos/ytc-macos-x64.zip ./artifacts/macos/ytc-macos-x64-${{ steps.version.outputs.version }}.zip
+
+          # Rename Linux artifacts
+          mv ./artifacts/linux/ytc-linux-x64.tar.gz ./artifacts/linux/ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz
+          mv ./artifacts/linux/ytc-linux-arm64.tar.gz ./artifacts/linux/ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz
+
       - name: Create Pre-release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: pr-${{ steps.pr.outputs.number }}-${{ github.sha }}
-          name: Pre-release for PR #${{ github.event.number }}
+          tag_name: v${{ steps.version.outputs.version }}-pr${{ steps.pr.outputs.number }}
+          name: v${{ steps.version.outputs.version }} Pre-release (PR #${{ github.event.number }})
           body: |
             This is a pre-release build for PR #${{ github.event.number }}.
 
             **Download the appropriate file for your platform:**
-            - **Windows x64**: `ytc-windows-x64.zip`
-            - **Windows x86**: `ytc-windows-x86.zip`
-            - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64.zip`
-            - **macOS x64 (Intel)**: `ytc-macos-x64.zip`
-            - **Linux x64**: `ytc-linux-x64.tar.gz`
-            - **Linux ARM64**: `ytc-linux-arm64.tar.gz`
+            - **Windows x64**: `ytc-windows-x64-${{ steps.version.outputs.version }}.zip`
+            - **Windows x86**: `ytc-windows-x86-${{ steps.version.outputs.version }}.zip`
+            - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64-${{ steps.version.outputs.version }}.zip`
+            - **macOS x64 (Intel)**: `ytc-macos-x64-${{ steps.version.outputs.version }}.zip`
+            - **Linux x64**: `ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz`
+            - **Linux ARM64**: `ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz`
 
             **Installation:**
             1. Download the appropriate file for your platform
             2. Extract the archive
             3. Run the executable: `./ytc` (Linux/macOS) or `ytc.exe` (Windows)
-          files: ./ytc-prerelease.zip
+          files: |
+            ./artifacts/windows/ytc-windows-x64-${{ steps.version.outputs.version }}.zip
+            ./artifacts/windows/ytc-windows-x86-${{ steps.version.outputs.version }}.zip
+            ./artifacts/macos/ytc-macos-arm64-${{ steps.version.outputs.version }}.zip
+            ./artifacts/macos/ytc-macos-x64-${{ steps.version.outputs.version }}.zip
+            ./artifacts/linux/ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz
+            ./artifacts/linux/ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz
           prerelease: true
           draft: false
         env:
@@ -352,34 +476,103 @@ jobs:
           name: linux-executables
           path: ./artifacts/linux
 
-      - name: Create Release Archive
+      - name: Get Version
+        id: version
         run: |
-          mkdir -p ./release
-          cp ./artifacts/windows/* ./release/
-          cp ./artifacts/macos/* ./release/
-          cp ./artifacts/linux/* ./release/
-          cd ./release
-          zip -r ../ytc-release.zip ./*
+          # Extract version from project file
+          VERSION=$(grep -o '<Version>[^<]*</Version>' ${{ env.PROJECT_PATH }} | sed 's/<Version>//;s/<\/Version>//')
+
+          # Validate version format (semantic versioning)
+          if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: MAJOR.MINOR.PATCH[-PRERELEASE]"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Extracted version: $VERSION"
+
+          # Extract version components for validation
+          VERSION_PARTS=(${VERSION//./ })
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]%%-*}
+
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
+          echo "patch=$PATCH" >> $GITHUB_OUTPUT
+
+          # Check if it's a prerelease version
+          if [[ $VERSION == *"-"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "🔶 Prerelease version detected"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "🔷 Release version detected"
+          fi
+
+      - name: Validate Version for Release
+        run: |
+          # For releases, we expect the version to NOT be a prerelease version
+          if [[ "${{ steps.version.outputs.is_prerelease }}" == "true" ]]; then
+            echo "❌ Error: Cannot create release with prerelease version ${{ steps.version.outputs.version }}"
+            echo "Please use a release version like ${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}.${{ steps.version.outputs.patch }}"
+            exit 1
+          fi
+
+          # Validate that the tag matches the version
+          EXPECTED_TAG="v${{ steps.version.outputs.version }}"
+          ACTUAL_TAG="${{ github.event.release.tag_name }}"
+
+          if [[ "$ACTUAL_TAG" != "$EXPECTED_TAG" ]]; then
+            echo "❌ Error: Tag mismatch"
+            echo "Expected tag: $EXPECTED_TAG"
+            echo "Actual tag: $ACTUAL_TAG"
+            echo "Please ensure the release tag matches the version in the project file"
+            exit 1
+          fi
+
+          echo "✅ Version validation passed"
+
+      - name: Rename artifacts with version
+        run: |
+          # Rename Windows artifacts
+          mv ./artifacts/windows/ytc-windows-x64.zip ./artifacts/windows/ytc-windows-x64-${{ steps.version.outputs.version }}.zip
+          mv ./artifacts/windows/ytc-windows-x86.zip ./artifacts/windows/ytc-windows-x86-${{ steps.version.outputs.version }}.zip
+
+          # Rename macOS artifacts
+          mv ./artifacts/macos/ytc-macos-arm64.zip ./artifacts/macos/ytc-macos-arm64-${{ steps.version.outputs.version }}.zip
+          mv ./artifacts/macos/ytc-macos-x64.zip ./artifacts/macos/ytc-macos-x64-${{ steps.version.outputs.version }}.zip
+
+          # Rename Linux artifacts
+          mv ./artifacts/linux/ytc-linux-x64.tar.gz ./artifacts/linux/ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz
+          mv ./artifacts/linux/ytc-linux-arm64.tar.gz ./artifacts/linux/ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.release.tag_name }}
-          name: ${{ github.event.release.name }}
+          name: v${{ steps.version.outputs.version }} Release
           body: |
             **Download the appropriate file for your platform:**
-            - **Windows x64**: `ytc-windows-x64.zip`
-            - **Windows x86**: `ytc-windows-x86.zip`
-            - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64.zip`
-            - **macOS x64 (Intel)**: `ytc-macos-x64.zip`
-            - **Linux x64**: `ytc-linux-x64.tar.gz`
-            - **Linux ARM64**: `ytc-linux-arm64.tar.gz`
+            - **Windows x64**: `ytc-windows-x64-${{ steps.version.outputs.version }}.zip`
+            - **Windows x86**: `ytc-windows-x86-${{ steps.version.outputs.version }}.zip`
+            - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64-${{ steps.version.outputs.version }}.zip`
+            - **macOS x64 (Intel)**: `ytc-macos-x64-${{ steps.version.outputs.version }}.zip`
+            - **Linux x64**: `ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz`
+            - **Linux ARM64**: `ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz`
 
             **Installation:**
             1. Download the appropriate file for your platform
             2. Extract the archive
             3. Run the executable: `./ytc` (Linux/macOS) or `ytc.exe` (Windows)
-          files: ./ytc-release.zip
+          files: |
+            ./artifacts/windows/ytc-windows-x64-${{ steps.version.outputs.version }}.zip
+            ./artifacts/windows/ytc-windows-x86-${{ steps.version.outputs.version }}.zip
+            ./artifacts/macos/ytc-macos-arm64-${{ steps.version.outputs.version }}.zip
+            ./artifacts/macos/ytc-macos-x64-${{ steps.version.outputs.version }}.zip
+            ./artifacts/linux/ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz
+            ./artifacts/linux/ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz
           prerelease: false
           draft: false
         env:

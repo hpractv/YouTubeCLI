@@ -22,6 +22,17 @@ This project maintains comprehensive test coverage with detailed reports availab
 - ✅ **Coverage Artifacts** with detailed HTML reports
 - ✅ **Codecov Integration** for historical coverage tracking
 
+## 🏷️ Versioning
+
+This project follows [Semantic Versioning (SemVer)](https://semver.org/) conventions:
+
+- **Current Version**: `1.0.0`
+- **Version Display**: Run `./ytc --version` to see the current version
+- **Release Files**: All release files include the version number (e.g., `ytc-windows-x64-1.0.0.zip`)
+- **Version Management**: Use `./update-version.ps1` script for version updates
+
+See [VERSIONING.md](VERSIONING.md) for detailed versioning information.
+
 ## Build
 
 The project can be built as a single, self-contained executable using the provided PowerShell script.
