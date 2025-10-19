@@ -110,8 +110,26 @@ namespace YouTubeCLI.Libraries
             bool testMode = false)
         {
             var _startDate = startsOn ?? DateOnly.FromDateTime(DateTime.Now);
-            var _nextBroadcastDay = _startDate.AddDays((7 + (broadcast.dayOfWeek - 1) - ((int)_startDate.DayOfWeek))).ToShortDateString();
-            var _startTime = DateTime.Parse($"{_nextBroadcastDay} {broadcast.broadcastStart}");
+
+            // Calculate the correct start date based on day of week
+            DateOnly _nextBroadcastDay;
+            var _startDayOfWeek = (int)_startDate.DayOfWeek;
+            var _targetDayOfWeek = broadcast.dayOfWeek;
+
+            if (_startDayOfWeek == _targetDayOfWeek)
+            {
+                // If the start date is already on the correct day of week, use it
+                _nextBroadcastDay = _startDate;
+            }
+            else
+            {
+                // Otherwise, find the next occurrence of that day of the week
+                var _daysToAdd = (7 + _targetDayOfWeek - _startDayOfWeek) % 7;
+                if (_daysToAdd == 0) _daysToAdd = 7; // If it's the same day, go to next week
+                _nextBroadcastDay = _startDate.AddDays(_daysToAdd);
+            }
+
+            var _startTime = DateTime.Parse($"{_nextBroadcastDay.ToShortDateString()} {broadcast.broadcastStart}");
             var _stream = streams.Single(s => s.Snippet.Title.ToLower() == broadcast.stream.ToLower());
             var _builtBroadcasts = new List<LiveBroadcastInfo>();
 
