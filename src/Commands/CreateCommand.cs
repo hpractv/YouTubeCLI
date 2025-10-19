@@ -55,7 +55,7 @@ namespace YouTubeCLI.Commands
 
         public override List<string> CreateArgs()
         {
-            var _args = Parent.CreateArgs();
+            var _args = Parent?.CreateArgs() ?? base.CreateArgs();
 
             _args.Add("file");
             _args.Add(BroadcastFile);
@@ -66,7 +66,7 @@ namespace YouTubeCLI.Commands
             _args.Add("clear-credential");
             _args.Add(ClearCredential.ToString());
 
-            if (Id != null)
+            if (!string.IsNullOrWhiteSpace(Id))
             {
                 _args.Add("id");
                 _args.Add(Id);
@@ -78,11 +78,14 @@ namespace YouTubeCLI.Commands
             }
 
             var output_options = new List<string>();
-            if (OutputOptions.Contains(OutputOptionsEnum.Single)) output_options.Add("Single");
-            if (OutputOptions.Contains(OutputOptionsEnum.Monthly)) output_options.Add("Monthly");
-            if (OutputOptions.Contains(OutputOptionsEnum.Daily)) output_options.Add("Daily");
-            if (OutputOptions.Contains(OutputOptionsEnum.Hourly)) output_options.Add("Hourly");
-            if (OutputOptions.Contains(OutputOptionsEnum.Broadcast)) output_options.Add("Broadcast");
+            if (OutputOptions != null)
+            {
+                if (OutputOptions.Contains(OutputOptionsEnum.Single)) output_options.Add("Single");
+                if (OutputOptions.Contains(OutputOptionsEnum.Monthly)) output_options.Add("Monthly");
+                if (OutputOptions.Contains(OutputOptionsEnum.Daily)) output_options.Add("Daily");
+                if (OutputOptions.Contains(OutputOptionsEnum.Hourly)) output_options.Add("Hourly");
+                if (OutputOptions.Contains(OutputOptionsEnum.Broadcast)) output_options.Add("Broadcast");
+            }
             if (output_options.Count > 0)
             {
                 _args.Add("output");

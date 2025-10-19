@@ -16,7 +16,7 @@ namespace YouTubeCLI.Tests.Libraries
             // Arrange
             var testJson = """
             {
-                "items": [
+                "broadcasts": [
                     {
                         "id": "test-broadcast-1",
                         "name": "Test Broadcast",

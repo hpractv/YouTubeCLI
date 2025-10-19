@@ -18,7 +18,7 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             commandAttribute.Should().NotBeNull();
-            commandAttribute.Description.Should().Be("Create YouTube Broadcasts");
+            commandAttribute!.Description.Should().Be("Create YouTube Broadcasts");
         }
 
         [Fact]
@@ -30,7 +30,7 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             commandAttribute.Should().NotBeNull();
-            commandAttribute.Description.Should().Be("Update Broadcast");
+            commandAttribute!.Description.Should().Be("Update Broadcast");
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             commandAttribute.Should().NotBeNull();
-            commandAttribute.Description.Should().Be("List YouTube Broadcasts");
+            commandAttribute!.Description.Should().Be("List YouTube Broadcasts");
         }
 
         [Fact]
@@ -54,7 +54,7 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             commandAttribute.Should().NotBeNull();
-            commandAttribute.Description.Should().Be("End YouTube Broadcasts");
+            commandAttribute!.Description.Should().Be("End YouTube Broadcasts");
         }
 
         [Fact]
@@ -74,9 +74,9 @@ namespace YouTubeCLI.Tests.Commands
             broadcastFileProperty.Should().NotBeNull();
 
             // Check for Required attributes
-            youtubeUserProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
-            clientSecretsProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
-            broadcastFileProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            youtubeUserProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            clientSecretsProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            broadcastFileProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
         }
 
         [Fact]
@@ -94,8 +94,8 @@ namespace YouTubeCLI.Tests.Commands
             clientSecretsProperty.Should().NotBeNull();
 
             // Check for Required attributes
-            youtubeUserProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
-            clientSecretsProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            youtubeUserProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            clientSecretsProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
         }
 
         [Fact]
@@ -115,9 +115,9 @@ namespace YouTubeCLI.Tests.Commands
             broadcastFileProperty.Should().NotBeNull();
 
             // Check for Required attributes
-            youtubeUserProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
-            clientSecretsProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
-            broadcastFileProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            youtubeUserProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            clientSecretsProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            broadcastFileProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
         }
 
         [Fact]
@@ -133,7 +133,7 @@ namespace YouTubeCLI.Tests.Commands
             idProperty.Should().NotBeNull();
 
             // Check for Required attributes
-            idProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
+            idProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().NotBeNull();
         }
 
         [Fact]
@@ -150,8 +150,8 @@ namespace YouTubeCLI.Tests.Commands
             startsOnProperty.Should().NotBeNull();
 
             // These should not have Required attributes
-            idProperty?.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
-            startsOnProperty?.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            idProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            startsOnProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
         }
 
         [Fact]
@@ -174,11 +174,11 @@ namespace YouTubeCLI.Tests.Commands
             privacyProperty.Should().NotBeNull();
 
             // These should not have Required attributes
-            broadcastFileProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
-            youtubeIdProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
-            autoStartProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
-            autoStopProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
-            privacyProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            broadcastFileProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            youtubeIdProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            autoStartProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            autoStopProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            privacyProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
         }
 
         [Fact]
@@ -193,7 +193,7 @@ namespace YouTubeCLI.Tests.Commands
             upcomingProperty.Should().NotBeNull();
 
             // This should not have Required attribute
-            upcomingProperty.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            upcomingProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
         }
     }
 }

@@ -6,6 +6,6 @@ namespace YouTubeCLI.Models
     public class Broadcasts
     {
         [JsonPropertyName("broadcasts")]
-        public IEnumerable<Broadcast> Items { get; set; }
+        public IEnumerable<Broadcast> Items { get; set; } = new List<Broadcast>();
     }
 }

@@ -47,7 +47,7 @@ namespace YouTubeCLI.Commands
 
         public override List<string> CreateArgs()
         {
-            var _args = Parent.CreateArgs();
+            var _args = Parent?.CreateArgs() ?? base.CreateArgs();
 
             _args.Add("youtube-user");
             _args.Add(YouTubeUser);
