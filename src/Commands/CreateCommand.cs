@@ -45,7 +45,7 @@ namespace YouTubeCLI.Commands
 
         [Option(
             "-l|--clear-credential",
-            "Clear authorizaiton credentials.",
+            "Clear authorization credentials.",
             CommandOptionType.NoValue)]
         internal bool ClearCredential { get; set; }
 
