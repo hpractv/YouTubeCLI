@@ -71,7 +71,7 @@ namespace YouTubeCLI.Commands
                 _args.Add("id");
                 _args.Add(Id);
             }
-            if(StartsOn != null)
+            if (StartsOn != null)
             {
                 _args.Add("starts-on");
                 _args.Add(StartsOn?.ToString("MM/dd/yy"));
