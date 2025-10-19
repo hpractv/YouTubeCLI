@@ -41,7 +41,7 @@ namespace YouTubeCLI.Libraries
             this._fileStore = new FileDataStore(this.GetType().ToString());
         }
 
-        internal async void ClearCredential()
+        internal async Task ClearCredential()
         {
             try{
                 await _fileStore.ClearAsync();
