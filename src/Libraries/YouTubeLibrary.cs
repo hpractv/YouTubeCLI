@@ -43,7 +43,7 @@ namespace YouTubeCLI.Libraries
 
         internal async Task ClearCredential()
         {
-            try{
+            try {
                 await _fileStore.ClearAsync();
                 // Clear static fields to force re-authentication
                 _service = null;
