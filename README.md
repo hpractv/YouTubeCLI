@@ -90,7 +90,7 @@ The compiled executable will be located in `src/bin/Release/net8.0/{runtime}/pub
 ./ytc -v
 ```
 
-For detailed command usage, run `ytc [command] -h` for specific command help.
+For detailed command usage, run `ytc [command] -h` for specific command help. You can also get more usage instructions [here](USAGE.md).
 
 ## 🧪 Running Tests and Coverage
 
