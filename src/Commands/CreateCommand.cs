@@ -119,7 +119,7 @@ namespace YouTubeCLI.Commands
                     Console.WriteLine("Test Mode: Only the first broadcast will be created");
                     Console.WriteLine("==================================");
                 }
-                if(ClearCredential){
+                if (ClearCredential){
                     Console.WriteLine("Clearing Credentials...");
                     _youTube.ClearCredential();
                     Console.WriteLine("==================================");
