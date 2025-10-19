@@ -1,0 +1,168 @@
+name: Coverage Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to analyze'
+        required: true
+        default: 'main'
+        type: string
+  schedule:
+    - cron: '0 0 * * 0' # Weekly on Sunday
+
+jobs:
+  coverage-analysis:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || 'main' }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore src/YouTubeCLI.csproj
+          dotnet restore tests/YouTubeCLI.Tests/YouTubeCLI.Tests.csproj
+
+      - name: Build projects
+        run: |
+          dotnet build src/YouTubeCLI.csproj --configuration Release --no-restore
+          dotnet build tests/YouTubeCLI.Tests/YouTubeCLI.Tests.csproj --configuration Release --no-restore
+
+      - name: Run tests with detailed coverage
+        run: |
+          dotnet test tests/YouTubeCLI.Tests/YouTubeCLI.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=test-results.trx" \
+            --settings coverlet.runsettings \
+            --logger "console;verbosity=detailed"
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate comprehensive coverage report
+        run: |
+          # Find all coverage files
+          COVERAGE_FILES=$(find ./TestResults -name "coverage.cobertura.xml" | tr '\n' ' ')
+
+          if [ -z "$COVERAGE_FILES" ]; then
+            echo "No coverage files found"
+            exit 1
+          fi
+
+          echo "Found coverage files: $COVERAGE_FILES"
+
+          # Generate comprehensive HTML report
+          reportgenerator \
+            -reports:"$COVERAGE_FILES" \
+            -targetdir:"./CoverageReport" \
+            -reporttypes:"Html;Cobertura;JsonSummary" \
+            -assemblyfilters:"-*.Tests*" \
+            -classfilters:"-*.Tests*" \
+            -filefilters:"-*.Tests*" \
+            -verbosity:Info
+
+      - name: Generate coverage summary
+        id: coverage-summary
+        run: |
+          # Extract coverage metrics from the generated report
+          if [ -f "./CoverageReport/Summary.json" ]; then
+            LINE_COVERAGE=$(cat ./CoverageReport/Summary.json | jq -r '.linecoverage')
+            BRANCH_COVERAGE=$(cat ./CoverageReport/Summary.json | jq -r '.branchcoverage')
+            TOTAL_LINES=$(cat ./CoverageReport/Summary.json | jq -r '.totallines')
+            COVERED_LINES=$(cat ./CoverageReport/Summary.json | jq -r '.coveredlines')
+
+            echo "line_coverage=$LINE_COVERAGE" >> $GITHUB_OUTPUT
+            echo "branch_coverage=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+            echo "total_lines=$TOTAL_LINES" >> $GITHUB_OUTPUT
+            echo "covered_lines=$COVERED_LINES" >> $GITHUB_OUTPUT
+
+            echo "## 📊 Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| **Line Coverage** | $LINE_COVERAGE% |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Branch Coverage** | $BRANCH_COVERAGE% |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total Lines** | $TOTAL_LINES |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Covered Lines** | $COVERED_LINES |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Coverage summary not found"
+            exit 1
+          fi
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: |
+            ./CoverageReport/
+            ./TestResults/
+          retention-days: 90
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./TestResults/**/coverage.cobertura.xml
+          flags: coverage-report
+          name: coverage-analysis
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Create coverage comment
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const lineCoverage = '${{ steps.coverage-summary.outputs.line_coverage }}';
+            const branchCoverage = '${{ steps.coverage-summary.outputs.branch_coverage }}';
+            const totalLines = '${{ steps.coverage-summary.outputs.total_lines }}';
+            const coveredLines = '${{ steps.coverage-summary.outputs.covered_lines }}';
+
+            const comment = `## 📊 Coverage Analysis Report
+
+            | Metric | Value |
+            |--------|-------|
+            | **Line Coverage** | ${lineCoverage}% |
+            | **Branch Coverage** | ${branchCoverage}% |
+            | **Total Lines** | ${totalLines} |
+            | **Covered Lines** | ${coveredLines} |
+
+            ### 📈 Coverage Details
+
+            - **Report Generated**: ${new Date().toISOString()}
+            - **Branch Analyzed**: \`${{ github.event.inputs.branch || 'main' }}\`
+            - **Commit**: \`${{ github.sha }}\`
+
+            ### 📁 Artifacts
+
+            - **HTML Report**: Available in workflow artifacts
+            - **Raw Data**: Cobertura XML format included
+            - **Codecov**: Uploaded for historical tracking
+
+            ### 🎯 Coverage Goals
+
+            - **Target Line Coverage**: 80%+
+            - **Target Branch Coverage**: 70%+
+            - **Current Status**: ${parseFloat(lineCoverage) >= 80 ? '✅' : '⚠️'} Line Coverage ${parseFloat(lineCoverage) >= 80 ? 'meets' : 'below'} target
+            - **Branch Status**: ${parseFloat(branchCoverage) >= 70 ? '✅' : '⚠️'} Branch Coverage ${parseFloat(branchCoverage) >= 70 ? 'meets' : 'below'} target
+            `;
+
+            // Create a new issue with the coverage report
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📊 Coverage Report - ${new Date().toLocaleDateString()}`,
+              body: comment,
+              labels: ['coverage', 'automated-report']
+            });

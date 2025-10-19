@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using YouTubeCLI.Models;
+using YouTubeCLI.Utilities;
 
 namespace YouTubeCLI.Libraries
 {
@@ -42,14 +43,22 @@ namespace YouTubeCLI.Libraries
 
         internal async void ClearCredential()
         {
-           await _fileStore.ClearAsync();
+            try{
+                await _fileStore.ClearAsync();
+                // Clear static fields to force re-authentication
+                _service = null;
+                _credential = null;
+            } catch (Exception ex)
+            {
+                Console.WriteLine($"Error clearing credentials: {ex.Message}");
+            }
         }
 
         private async Task<YouTubeService> GetService()
         {
             if (_service == null)
             {
-                using (var stream = new FileStream($@"{_clientSecretsFile}", FileMode.Open, FileAccess.Read))
+                using (var stream = new FileStream(_clientSecretsFile, FileMode.Open, FileAccess.Read))
                 {
 
                     if (_credential == null)
@@ -101,7 +110,7 @@ namespace YouTubeCLI.Libraries
             bool testMode = false)
         {
             var _startDate = startsOn ?? DateOnly.FromDateTime(DateTime.Now);
-            var _nextBroadcastDay = _startDate.AddDays((7 + (broadcast.dayOfWeek - 1) - ((int)DateTime.Now.DayOfWeek))).ToShortDateString();
+            var _nextBroadcastDay = _startDate.AddDays((7 + (broadcast.dayOfWeek - 1) - ((int)_startDate.DayOfWeek))).ToShortDateString();
             var _startTime = DateTime.Parse($"{_nextBroadcastDay} {broadcast.broadcastStart}");
             var _stream = streams.Single(s => s.Snippet.Title.ToLower() == broadcast.stream.ToLower());
             var _builtBroadcasts = new List<LiveBroadcastInfo>();
@@ -185,7 +194,26 @@ namespace YouTubeCLI.Libraries
         {
             using (var _client = new HttpClient())
             {
-                var _thumbnail = new FileStream($"{thumbnailDirectory}\\{thumbnail}", FileMode.Open, FileAccess.Read);
+                // Debug: Show original values
+                Console.WriteLine($"OS: {OSDetection.GetOSInfo()}");
+                Console.WriteLine($"Thumbnail directory: {thumbnailDirectory}");
+                Console.WriteLine($"Original thumbnail: {thumbnail}");
+
+                // Use OS detection to properly normalize the thumbnail path
+                var normalizedThumbnail = OSDetection.NormalizePath(thumbnail);
+                Console.WriteLine($"Normalized thumbnail: {normalizedThumbnail}");
+
+                var fullThumbnailPath = Path.Combine(thumbnailDirectory, normalizedThumbnail);
+                Console.WriteLine($"Full thumbnail path: {fullThumbnailPath}");
+
+                // Check if file exists before trying to open it
+                if (!File.Exists(fullThumbnailPath))
+                {
+                    Console.WriteLine($"❌ File not found: {fullThumbnailPath}");
+                    throw new FileNotFoundException($"Thumbnail file not found: {fullThumbnailPath}");
+                }
+
+                var _thumbnail = new FileStream(fullThumbnailPath, FileMode.Open, FileAccess.Read);
                 var _type = Path.GetExtension(thumbnail) switch
                 {
                     ".png" => "image/png",

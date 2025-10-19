@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>ytc</AssemblyName>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <StartupObject>YouTubeCLI.YouTubeCLI</StartupObject>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
@@ -13,9 +13,5 @@
     <PackageReference Include="analyticsLibrary" Version="1.0.3" />
     <PackageReference Include="Google.Apis.YouTube.v3" Version="1.57.0.2658" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="broadcasts.json" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

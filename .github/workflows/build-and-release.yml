@@ -1,0 +1,426 @@
+name: Build and Release
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  release:
+    types: [published]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_PATH: 'src/YouTubeCLI.csproj'
+  TEST_PROJECT_PATH: 'tests/YouTubeCLI.Tests/YouTubeCLI.Tests.csproj'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Restore test dependencies
+        run: dotnet restore ${{ env.TEST_PROJECT_PATH }}
+
+      - name: Build project
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Build test project
+        run: dotnet build ${{ env.TEST_PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Run tests with coverage
+        run: |
+          dotnet test ${{ env.TEST_PROJECT_PATH }} \
+            --configuration Release \
+            --no-build \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=test-results.trx" \
+            --settings coverlet.runsettings
+
+      - name: Generate coverage report
+        run: |
+          # Find the coverage file
+          COVERAGE_FILE=$(find ./TestResults -name "coverage.cobertura.xml" | head -1)
+          if [ -f "$COVERAGE_FILE" ]; then
+            echo "Coverage file found: $COVERAGE_FILE"
+            # Generate HTML report
+            dotnet tool install -g dotnet-reportgenerator-globaltool
+            reportgenerator -reports:"$COVERAGE_FILE" -targetdir:"./CoverageReport" -reporttypes:"Html;Cobertura"
+          else
+            echo "No coverage file found"
+            exit 1
+          fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./TestResults/**/coverage.cobertura.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            ./CoverageReport/
+            ./TestResults/
+          retention-days: 30
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Try to find coverage summary
+            const coverageDir = './TestResults';
+            let coverageSummary = '';
+
+            try {
+              const files = fs.readdirSync(coverageDir, { recursive: true });
+              const coverageFile = files.find(f => f.includes('coverage.cobertura.xml'));
+
+              if (coverageFile) {
+                const coveragePath = path.join(coverageDir, coverageFile);
+                const coverageContent = fs.readFileSync(coveragePath, 'utf8');
+
+                // Extract coverage percentage from XML
+                const lineRateMatch = coverageContent.match(/line-rate="([^"]+)"/);
+                const branchRateMatch = coverageContent.match(/branch-rate="([^"]+)"/);
+
+                if (lineRateMatch && branchRateMatch) {
+                  const lineCoverage = Math.round(parseFloat(lineRateMatch[1]) * 100);
+                  const branchCoverage = Math.round(parseFloat(branchRateMatch[1]) * 100);
+
+                  coverageSummary = `## 📊 Code Coverage Report
+
+                  | Metric | Coverage |
+                  |--------|----------|
+                  | **Line Coverage** | ${lineCoverage}% |
+                  | **Branch Coverage** | ${branchCoverage}% |
+
+                  📈 Detailed coverage report is available in the workflow artifacts.`;
+                }
+              }
+            } catch (error) {
+              console.log('Could not generate coverage summary:', error.message);
+            }
+
+            if (coverageSummary) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: coverageSummary
+              });
+            }
+
+  build-windows:
+    name: Build Windows Executables
+    runs-on: windows-latest
+    needs: test
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build Windows x64
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} -r win-x64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/windows-x64
+
+      - name: Build Windows x86
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} -r win-x86 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/windows-x86
+
+      - name: Create Windows x64 Archive
+        run: |
+          Compress-Archive -Path ./dist/windows-x64/* -DestinationPath ./dist/ytc-windows-x64.zip
+
+      - name: Create Windows x86 Archive
+        run: |
+          Compress-Archive -Path ./dist/windows-x86/* -DestinationPath ./dist/ytc-windows-x86.zip
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-executables
+          path: ./dist/ytc-windows-*.zip
+
+  build-macos:
+    name: Build macOS Executables
+    runs-on: macos-latest
+    needs: test
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build macOS ARM64
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} -r osx-arm64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/macos-arm64
+
+      - name: Build macOS x64
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} -r osx-x64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/macos-x64
+
+      - name: Create macOS ARM64 Archive
+        run: |
+          cd ./dist/macos-arm64
+          zip -r ../ytc-macos-arm64.zip ./*
+
+      - name: Create macOS x64 Archive
+        run: |
+          cd ./dist/macos-x64
+          zip -r ../ytc-macos-x64.zip ./*
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-executables
+          path: ./dist/ytc-macos-*.zip
+
+  build-linux:
+    name: Build Linux Executables
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build Linux x64
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} -r linux-x64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/linux-x64
+
+      - name: Build Linux ARM64
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} -r linux-arm64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/linux-arm64
+
+      - name: Create Linux x64 Archive
+        run: |
+          cd ./dist/linux-x64
+          tar -czf ../ytc-linux-x64.tar.gz ./*
+
+      - name: Create Linux ARM64 Archive
+        run: |
+          cd ./dist/linux-arm64
+          tar -czf ../ytc-linux-arm64.tar.gz ./*
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-executables
+          path: ./dist/ytc-linux-*.tar.gz
+
+  create-prerelease:
+    name: Create Pre-release
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-macos, build-linux]
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-executables
+          path: ./artifacts/windows
+
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-executables
+          path: ./artifacts/macos
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-executables
+          path: ./artifacts/linux
+
+      - name: Create Release Archive
+        run: |
+          mkdir -p ./release
+          cp ./artifacts/windows/* ./release/
+          cp ./artifacts/macos/* ./release/
+          cp ./artifacts/linux/* ./release/
+          cd ./release
+          zip -r ../ytc-prerelease.zip ./*
+
+      - name: Get PR Number
+        id: pr
+        run: echo "number=${{ github.event.number }}" >> $GITHUB_OUTPUT
+
+      - name: Create Pre-release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: pr-${{ steps.pr.outputs.number }}-${{ github.sha }}
+          name: Pre-release for PR #${{ github.event.number }}
+          body: |
+            This is a pre-release build for PR #${{ github.event.number }}.
+
+            **Download the appropriate file for your platform:**
+            - **Windows x64**: `ytc-windows-x64.zip`
+            - **Windows x86**: `ytc-windows-x86.zip`
+            - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64.zip`
+            - **macOS x64 (Intel)**: `ytc-macos-x64.zip`
+            - **Linux x64**: `ytc-linux-x64.tar.gz`
+            - **Linux ARM64**: `ytc-linux-arm64.tar.gz`
+
+            **Installation:**
+            1. Download the appropriate file for your platform
+            2. Extract the archive
+            3. Run the executable: `./ytc` (Linux/macOS) or `ytc.exe` (Windows)
+          files: ./ytc-prerelease.zip
+          prerelease: true
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-macos, build-linux]
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-executables
+          path: ./artifacts/windows
+
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-executables
+          path: ./artifacts/macos
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-executables
+          path: ./artifacts/linux
+
+      - name: Create Release Archive
+        run: |
+          mkdir -p ./release
+          cp ./artifacts/windows/* ./release/
+          cp ./artifacts/macos/* ./release/
+          cp ./artifacts/linux/* ./release/
+          cd ./release
+          zip -r ../ytc-release.zip ./*
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.name }}
+          body: |
+            **Download the appropriate file for your platform:**
+            - **Windows x64**: `ytc-windows-x64.zip`
+            - **Windows x86**: `ytc-windows-x86.zip`
+            - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64.zip`
+            - **macOS x64 (Intel)**: `ytc-macos-x64.zip`
+            - **Linux x64**: `ytc-linux-x64.tar.gz`
+            - **Linux ARM64**: `ytc-linux-arm64.tar.gz`
+
+            **Installation:**
+            1. Download the appropriate file for your platform
+            2. Extract the archive
+            3. Run the executable: `./ytc` (Linux/macOS) or `ytc.exe` (Windows)
+          files: ./ytc-release.zip
+          prerelease: false
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup-prereleases:
+    name: Cleanup Pre-releases
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete Pre-releases
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            const prereleases = releases.filter(release => release.prerelease);
+
+            for (const release of prereleases) {
+              console.log(`Deleting pre-release: ${release.tag_name}`);
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id
+              });
+
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${release.tag_name}`
+              });
+            }
+
+            console.log(`Deleted ${prereleases.length} pre-releases`);
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

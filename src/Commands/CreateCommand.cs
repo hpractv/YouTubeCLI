@@ -43,6 +43,12 @@ namespace YouTubeCLI.Commands
             Description = "Date to start the broadcasts on. '01/01/21' ")]
         public DateOnly? StartsOn { get; set; }
 
+        [Option(
+            "-l|--clear-credential",
+            "Clear authorizaiton credentials.",
+            CommandOptionType.NoValue)]
+        internal bool ClearCredential { get; set; }
+
         public Broadcasts broadcasts { get; set; }
 
         private YouTubeCLI Parent { get; set; }
@@ -57,11 +63,18 @@ namespace YouTubeCLI.Commands
             _args.Add(ClientSecretsFile);
             _args.Add("occurrences");
             _args.Add(Occurrences.ToString());
+            _args.Add("clear-credential");
+            _args.Add(ClearCredential.ToString());
 
             if (Id != null)
             {
                 _args.Add("id");
                 _args.Add(Id);
+            }
+            if(StartsOn != null)
+            {
+                _args.Add("starts-on");
+                _args.Add(StartsOn?.ToString("MM/dd/yy"));
             }
 
             var output_options = new List<string>();
@@ -70,7 +83,7 @@ namespace YouTubeCLI.Commands
             if (OutputOptions.Contains(OutputOptionsEnum.Daily)) output_options.Add("Daily");
             if (OutputOptions.Contains(OutputOptionsEnum.Hourly)) output_options.Add("Hourly");
             if (OutputOptions.Contains(OutputOptionsEnum.Broadcast)) output_options.Add("Broadcast");
-            if (output_options.Count() > 0)
+            if (output_options.Count > 0)
             {
                 _args.Add("output");
                 _args.Add(string.Join(", ", output_options));
@@ -89,11 +102,11 @@ namespace YouTubeCLI.Commands
                 var thumbnailDirectory = Path.GetDirectoryName(BroadcastFile);
                 var _youTube = new YouTubeLibrary(YouTubeUser, ClientSecretsFile);
                 Console.WriteLine("Creating Broadcasts");
-
+                Console.WriteLine($"Broadcast Count: {broadcasts.Items.Count()}");
                 var _active = broadcasts.Items
-                    .Where(b => b.active &&
-                       (string.IsNullOrWhiteSpace(Id) ||
-                         Id.Split(',').Contains(b.id)));
+                    .Where(b => b.active); // &&
+                       //(string.IsNullOrWhiteSpace(Id) ||
+                       //  Id.Split(',').Contains(b.id)));
 
                 Console.WriteLine($"Active Broadcast Count: {_active.Count()}");
                 Console.WriteLine("==================================");
@@ -101,6 +114,11 @@ namespace YouTubeCLI.Commands
                 if (TestMode)
                 {
                     Console.WriteLine("Test Mode: Only the first broadcast will be created");
+                    Console.WriteLine("==================================");
+                }
+                if(ClearCredential){
+                    Console.WriteLine("Clearing Credentials...");
+                    _youTube.ClearCredential();
                     Console.WriteLine("==================================");
                 }
                 foreach (var _broadcast in _active.Take(TestMode ? 1 : _active.Count()))
@@ -148,7 +166,7 @@ namespace YouTubeCLI.Commands
                             var _path = Path.Combine(thumbnailDirectory, $"{(aggregate == OutputOptionsEnum.Single ? "ALL" : _g.Key)}_broadcasts_info.csv");
                             _g.OrderBy(i => i.start)
                                 .Select(b => new object[] { b.youTubeId, b.title, b.start, b.autoStart, b.autoStop, b.privacy, b.url, b.link })
-                                .writeCsv(Path.Combine(thumbnailDirectory, _path), _outputColumns);
+                                .writeCsv(_path, _outputColumns);
                         }
                     });
 
