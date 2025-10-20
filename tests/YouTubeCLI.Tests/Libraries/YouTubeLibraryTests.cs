@@ -105,5 +105,100 @@ namespace YouTubeCLI.Tests.Libraries
             await act.Should().ThrowAsync<ArgumentException>()
                 .WithParameterName("startsOn");
         }
+
+        [Fact]
+        public void BuildBroadCast_WithNullStartDate_ShouldNotThrowException()
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                dayOfWeek = 1,
+                broadcastStart = "10:00 AM",
+                broadcastDurationInMinutes = 60,
+                stream = "test-stream",
+                privacy = "private",
+                autoStart = true,
+                autoStop = true
+            };
+
+            // Act
+            Func<Task> act = async () => await youTubeLibrary.BuildBroadCast(
+                broadcast, 
+                occurrences: 1, 
+                thumbnailDirectory: "/tmp", 
+                startsOn: null, 
+                testMode: true);
+
+            // Assert - this will eventually fail with a different error (no credentials)
+            // but it should NOT throw ArgumentException about past date
+            act.Should().NotThrowAsync<ArgumentException>("startsOn should be optional and default to today");
+        }
+
+        [Fact]
+        public void BuildBroadCast_WithTodayStartDate_ShouldNotThrowArgumentException()
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                dayOfWeek = 1,
+                broadcastStart = "10:00 AM",
+                broadcastDurationInMinutes = 60,
+                stream = "test-stream",
+                privacy = "private",
+                autoStart = true,
+                autoStop = true
+            };
+            var today = DateOnly.FromDateTime(DateTime.Now);
+
+            // Act
+            Func<Task> act = async () => await youTubeLibrary.BuildBroadCast(
+                broadcast, 
+                occurrences: 1, 
+                thumbnailDirectory: "/tmp", 
+                startsOn: today, 
+                testMode: true);
+
+            // Assert - this will eventually fail with a different error (no credentials)
+            // but it should NOT throw ArgumentException about past date
+            act.Should().NotThrowAsync<ArgumentException>("today's date should be valid");
+        }
+
+        [Fact]
+        public void BuildBroadCast_WithFutureStartDate_ShouldNotThrowArgumentException()
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                dayOfWeek = 1,
+                broadcastStart = "10:00 AM",
+                broadcastDurationInMinutes = 60,
+                stream = "test-stream",
+                privacy = "private",
+                autoStart = true,
+                autoStop = true
+            };
+            var futureDate = DateOnly.FromDateTime(DateTime.Now).AddDays(7);
+
+            // Act
+            Func<Task> act = async () => await youTubeLibrary.BuildBroadCast(
+                broadcast, 
+                occurrences: 1, 
+                thumbnailDirectory: "/tmp", 
+                startsOn: futureDate, 
+                testMode: true);
+
+            // Assert - this will eventually fail with a different error (no credentials)
+            // but it should NOT throw ArgumentException about past date
+            act.Should().NotThrowAsync<ArgumentException>("future dates should be valid");
+        }
     }
 }
