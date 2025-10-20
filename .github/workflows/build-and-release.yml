@@ -578,14 +578,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  cleanup-prereleases:
-    name: Cleanup Pre-releases
+  cleanup-and-release:
+    name: Cleanup Pre-releases and Create Release
     runs-on: ubuntu-latest
+    needs: [build-windows, build-macos, build-linux]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Delete Pre-releases
         uses: actions/github-script@v7
@@ -615,5 +620,116 @@ jobs:
             }
 
             console.log(`Deleted ${prereleases.length} pre-releases`);
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get Current Version
+        id: current-version
+        run: |
+          VERSION=$(grep -o '<Version>[^<]*</Version>' ${{ env.PROJECT_PATH }} | sed 's/<Version>//;s/<\/Version>//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Increment Version
+        id: new-version
+        run: |
+          CURRENT_VERSION="${{ steps.current-version.outputs.version }}"
+          
+          # Parse current version
+          VERSION_PARTS=(${CURRENT_VERSION//./ })
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]%%-*}
+          
+          # Increment patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update Project File
+        run: |
+          NEW_VERSION="${{ steps.new-version.outputs.new_version }}"
+          
+          # Update the project file
+          sed -i "s/<Version>[^<]*<\/Version>/<Version>$NEW_VERSION<\/Version>/" ${{ env.PROJECT_PATH }}
+          sed -i "s/<AssemblyVersion>[^<]*<\/AssemblyVersion>/<AssemblyVersion>$NEW_VERSION.0<\/AssemblyVersion>/" ${{ env.PROJECT_PATH }}
+          sed -i "s/<FileVersion>[^<]*<\/FileVersion>/<FileVersion>$NEW_VERSION.0<\/FileVersion>/" ${{ env.PROJECT_PATH }}
+          sed -i "s/<InformationalVersion>[^<]*<\/InformationalVersion>/<InformationalVersion>$NEW_VERSION<\/InformationalVersion>/" ${{ env.PROJECT_PATH }}
+          
+          echo "Updated project file with version: $NEW_VERSION"
+
+      - name: Commit Version Change
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add ${{ env.PROJECT_PATH }}
+          git commit -m "chore: bump version to ${{ steps.new-version.outputs.new_version }}"
+          git push
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-executables
+          path: ./artifacts/windows
+
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-executables
+          path: ./artifacts/macos
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-executables
+          path: ./artifacts/linux
+
+      - name: Rename artifacts with version
+        run: |
+          # Rename Windows artifacts
+          mv ./artifacts/windows/ytc-windows-x64.zip ./artifacts/windows/ytc-windows-x64-${{ steps.new-version.outputs.new_version }}.zip
+          mv ./artifacts/windows/ytc-windows-x86.zip ./artifacts/windows/ytc-windows-x86-${{ steps.new-version.outputs.new_version }}.zip
+          
+          # Rename macOS artifacts
+          mv ./artifacts/macos/ytc-macos-arm64.zip ./artifacts/macos/ytc-macos-arm64-${{ steps.new-version.outputs.new_version }}.zip
+          mv ./artifacts/macos/ytc-macos-x64.zip ./artifacts/macos/ytc-macos-x64-${{ steps.new-version.outputs.new_version }}.zip
+          
+          # Rename Linux artifacts
+          mv ./artifacts/linux/ytc-linux-x64.tar.gz ./artifacts/linux/ytc-linux-x64-${{ steps.new-version.outputs.new_version }}.tar.gz
+          mv ./artifacts/linux/ytc-linux-arm64.tar.gz ./artifacts/linux/ytc-linux-arm64-${{ steps.new-version.outputs.new_version }}.tar.gz
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.new-version.outputs.new_version }}
+          name: v${{ steps.new-version.outputs.new_version }}
+          body: |
+            ## Release v${{ steps.new-version.outputs.new_version }}
+            
+            This release was automatically created from the merge to main.
+            
+            **Download the appropriate file for your platform:**
+            - **Windows x64**: `ytc-windows-x64-${{ steps.new-version.outputs.new_version }}.zip`
+            - **Windows x86**: `ytc-windows-x86-${{ steps.new-version.outputs.new_version }}.zip`
+            - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64-${{ steps.new-version.outputs.new_version }}.zip`
+            - **macOS x64 (Intel)**: `ytc-macos-x64-${{ steps.new-version.outputs.new_version }}.zip`
+            - **Linux x64**: `ytc-linux-x64-${{ steps.new-version.outputs.new_version }}.tar.gz`
+            - **Linux ARM64**: `ytc-linux-arm64-${{ steps.new-version.outputs.new_version }}.tar.gz`
+            
+            **Installation:**
+            1. Download the appropriate file for your platform
+            2. Extract the archive
+            3. Run the executable: `./ytc` (Linux/macOS) or `ytc.exe` (Windows)
+          files: |
+            ./artifacts/windows/ytc-windows-x64-${{ steps.new-version.outputs.new_version }}.zip
+            ./artifacts/windows/ytc-windows-x86-${{ steps.new-version.outputs.new_version }}.zip
+            ./artifacts/macos/ytc-macos-arm64-${{ steps.new-version.outputs.new_version }}.zip
+            ./artifacts/macos/ytc-macos-x64-${{ steps.new-version.outputs.new_version }}.zip
+            ./artifacts/linux/ytc-linux-x64-${{ steps.new-version.outputs.new_version }}.tar.gz
+            ./artifacts/linux/ytc-linux-arm64-${{ steps.new-version.outputs.new_version }}.tar.gz
+          prerelease: false
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
