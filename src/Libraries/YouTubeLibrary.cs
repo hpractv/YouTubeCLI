@@ -110,6 +110,12 @@ namespace YouTubeCLI.Libraries
             bool testMode = false)
         {
             var _startDate = startsOn ?? DateOnly.FromDateTime(DateTime.Now);
+            
+            // Validate that start date is not before today
+            if (startsOn.HasValue && startsOn.Value < DateOnly.FromDateTime(DateTime.Now))
+            {
+                throw new ArgumentException($"Start date '{startsOn.Value:MM/dd/yyyy}' cannot be before today's date '{DateOnly.FromDateTime(DateTime.Now):MM/dd/yyyy}'.", nameof(startsOn));
+            }
 
             // Calculate the correct start date based on day of week
             DateOnly _nextBroadcastDay;
