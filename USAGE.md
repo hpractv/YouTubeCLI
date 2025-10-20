@@ -129,7 +129,7 @@ Creates YouTube broadcasts from a JSON configuration file.
 **Optional Options**:
 - `-o, --occurences <int>`: Number of stream events to create (default: 1)
 - `-i, --id <value>`: Create specific broadcasts by ID (comma-separated)
-- `-s, --starts-on <value>`: Start date for broadcasts (format: MM/dd/yy)
+- `-s, --starts-on <value>`: Start date for broadcasts (format: MM/dd/yy). **Note**: Date cannot be before today's date. Past dates will result in an error.
 - `-e, --output <int>`: Output file options (1=Single, 2=Monthly, 3=Daily, 4=Hourly, 5=Broadcast)
 - `-l, --clear-credential`: Clear stored authentication credentials
 - `-t, --test-mode`: Create first broadcast as private (for testing)
@@ -142,7 +142,7 @@ Creates YouTube broadcasts from a JSON configuration file.
 # Create specific broadcasts in test mode
 ./ytc create -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -i "broadcast1,broadcast2" -t
 
-# Create broadcasts starting on specific date
+# Create broadcasts starting on specific date (must be today or in the future)
 ./ytc create -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -s "01/15/24"
 
 # Create with multiple occurrences and output options
@@ -336,7 +336,13 @@ Download from Google Cloud Console as `client_secrets.json`:
    - Make sure your YouTube channel has live streaming enabled
    - Verify OAuth scopes include YouTube Data API access
 
-4. **Build Issues**:
+4. **Start Date Validation Errors**:
+   - If you receive "Start date cannot be before today's date" error:
+     - Ensure the date provided with `-s` option is today or in the future
+     - Check your system date is correct
+     - Use format MM/dd/yy for the start date
+
+5. **Build Issues**:
    - Ensure .NET 8.0 SDK is installed
    - Check that all dependencies are restored
 
