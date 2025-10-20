@@ -47,7 +47,7 @@ namespace YouTubeCLI.Commands
 
         public override List<string> CreateArgs()
         {
-            var _args = Parent.CreateArgs();
+            var _args = Parent?.CreateArgs() ?? base.CreateArgs();
 
             _args.Add("youtube-user");
             _args.Add(YouTubeUser);
@@ -119,9 +119,7 @@ namespace YouTubeCLI.Commands
 
                         _updateBroadcast(_youTube, b[Constants.YouTubeId_COLUMN], autoStart, autoStop, privacy);
                     }
-
                 }
-
             }
             catch (Exception exc)
             {
@@ -132,7 +130,6 @@ namespace YouTubeCLI.Commands
             {
             }
             return _success;
-
 
             void _updateBroadcast(YouTubeLibrary youTubelibrary, string youTubeId, bool? autoStart, bool? autoStop, PrivacyEnum? privacy)
             {

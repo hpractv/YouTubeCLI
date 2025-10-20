@@ -57,9 +57,9 @@ namespace YouTubeCLI.Commands
 
         public override List<string> CreateArgs()
         {
-            var _args = Parent.CreateArgs();
+            var _args = Parent?.CreateArgs() ?? base.CreateArgs();
 
-            if (ClientSecretsFile != null)
+            if (!string.IsNullOrWhiteSpace(ClientSecretsFile))
             {
                 _args.Add("client-secrets");
                 _args.Add(ClientSecretsFile);

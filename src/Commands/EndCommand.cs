@@ -20,9 +20,9 @@ namespace YouTubeCLI.Commands
 
         public override List<string> CreateArgs()
         {
-            var args = Parent.CreateArgs();
+            var args = Parent?.CreateArgs() ?? base.CreateArgs();
 
-            if (Id != null)
+            if (!string.IsNullOrWhiteSpace(Id))
             {
                 args.Add("id");
                 args.Add(Id);

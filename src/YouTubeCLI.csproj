@@ -3,17 +3,19 @@
   <PropertyGroup>
     <AssemblyName>ytc</AssemblyName>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
+    <StartupObject>YouTubeCLI.YouTubeCLI</StartupObject>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="analyticsLibrary" Version="1.0.3" />
     <PackageReference Include="Google.Apis.YouTube.v3" Version="1.57.0.2658" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="client_secrets.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="broadcasts.json" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

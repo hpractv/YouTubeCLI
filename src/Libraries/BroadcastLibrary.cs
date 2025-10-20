@@ -8,7 +8,7 @@ namespace YouTubeCLI.Libraries {
     {
         public static Broadcasts GetBroadcasts(string broadcastFile)
         {
-            var _file = File.ReadAllText($@"{broadcastFile}");
+            var _file = File.ReadAllText(broadcastFile);
             var _broadcasts = JsonSerializer.Deserialize<Broadcasts>(_file);
             return _broadcasts;
         }
