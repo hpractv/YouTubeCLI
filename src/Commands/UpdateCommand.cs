@@ -115,7 +115,7 @@ namespace YouTubeCLI.Commands
                     {
                         var autoStart = bool.Parse(b[Constants.AutoStart_COLUMN]);
                         var autoStop = bool.Parse(b[Constants.AutoStop_COLUMN]);
-                        var privacy = (PrivacyEnum)Enum.Parse(typeof(PrivacyEnum), b[Constants.Privacy_COLUMN]);
+                        var privacy = (PrivacyEnum)Enum.Parse(typeof(PrivacyEnum), b[Constants.Privacy_COLUMN], true);
 
                         _updateBroadcast(_youTube, b[Constants.YouTubeId_COLUMN], autoStart, autoStop, privacy);
                     }
