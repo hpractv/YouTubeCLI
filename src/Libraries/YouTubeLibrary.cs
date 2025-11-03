@@ -110,7 +110,7 @@ namespace YouTubeCLI.Libraries
             bool testMode = false)
         {
             var _startDate = startsOn ?? DateOnly.FromDateTime(DateTime.Now);
-            
+
             // Validate that start date is not before today
             if (startsOn.HasValue && startsOn.Value < DateOnly.FromDateTime(DateTime.Now))
             {
@@ -153,7 +153,7 @@ namespace YouTubeCLI.Libraries
                         },
                         Status = new LiveBroadcastStatus()
                         {
-                            PrivacyStatus = broadcast.privacy,
+                            PrivacyStatus = broadcast.privacy.ToLower(),
                             // SelfDeclaredMadeForKids = true, going to disable the chat by hand and not use this flag
                         },
                         ContentDetails = new LiveBroadcastContentDetails()
