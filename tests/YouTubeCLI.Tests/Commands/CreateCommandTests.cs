@@ -153,7 +153,6 @@ namespace YouTubeCLI.Tests.Commands
         [InlineData("Secret")]
         [InlineData("Hidden")]
         [InlineData("123")]
-        [InlineData("")]
         public void Broadcast_Privacy_WithInvalidValues_ShouldNotMatchValidOptions(string invalidPrivacy)
         {
             // Arrange
@@ -166,15 +165,34 @@ namespace YouTubeCLI.Tests.Commands
             };
 
             // Act
-            var privacyLower = broadcast.privacy?.ToLower();
+            var privacyLower = broadcast.privacy.ToLower();
 
             // Assert
             // Invalid values should not match any of the valid privacy options
-            if (!string.IsNullOrEmpty(privacyLower))
+            var validValues = new[] { "private", "public", "unlisted" };
+            validValues.Should().NotContain(privacyLower);
+        }
+
+        [Fact]
+        public void Broadcast_Privacy_WithEmptyString_ShouldNotMatchValidOptions()
+        {
+            // Arrange
+            var broadcast = new Broadcast
             {
-                var validValues = new[] { "private", "public", "unlisted" };
-                validValues.Should().NotContain(privacyLower);
-            }
+                id = "test-id",
+                name = "Test Broadcast",
+                privacy = "",
+                active = true
+            };
+
+            // Act
+            var privacyLower = broadcast.privacy.ToLower();
+
+            // Assert
+            // Empty string should not match any of the valid privacy options
+            var validValues = new[] { "private", "public", "unlisted" };
+            validValues.Should().NotContain(privacyLower);
+            privacyLower.Should().BeEmpty();
         }
 
         [Fact]
