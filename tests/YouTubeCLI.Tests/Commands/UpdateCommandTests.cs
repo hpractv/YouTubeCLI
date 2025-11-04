@@ -240,5 +240,135 @@ namespace YouTubeCLI.Tests.Commands
             args.Should().NotContain("file");
             args.Should().NotContain("youtube-id");
         }
+
+        [Theory]
+        [InlineData(PrivacyEnum.Private)]
+        [InlineData(PrivacyEnum.Public)]
+        [InlineData(PrivacyEnum.Unlisted)]
+        public void CreateArgs_WithValidPrivacyValues_ShouldIncludePrivacyInArgs(PrivacyEnum privacy)
+        {
+            // Arrange
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                Privacy = privacy
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("privacy");
+            args.Should().Contain(privacy.ToString());
+        }
+
+        [Fact]
+        public void Privacy_WithPrivateValue_ShouldBeSetCorrectly()
+        {
+            // Arrange & Act
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                Privacy = PrivacyEnum.Private
+            };
+
+            // Assert
+            command.Privacy.Should().Be(PrivacyEnum.Private);
+        }
+
+        [Fact]
+        public void Privacy_WithPublicValue_ShouldBeSetCorrectly()
+        {
+            // Arrange & Act
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                Privacy = PrivacyEnum.Public
+            };
+
+            // Assert
+            command.Privacy.Should().Be(PrivacyEnum.Public);
+        }
+
+        [Fact]
+        public void Privacy_WithUnlistedValue_ShouldBeSetCorrectly()
+        {
+            // Arrange & Act
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                Privacy = PrivacyEnum.Unlisted
+            };
+
+            // Assert
+            command.Privacy.Should().Be(PrivacyEnum.Unlisted);
+        }
+
+        [Fact]
+        public void Privacy_WithNullValue_ShouldBeNull()
+        {
+            // Arrange & Act
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                Privacy = null
+            };
+
+            // Assert
+            command.Privacy.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData("Private", PrivacyEnum.Private)]
+        [InlineData("Public", PrivacyEnum.Public)]
+        [InlineData("Unlisted", PrivacyEnum.Unlisted)]
+        [InlineData("private", PrivacyEnum.Private)]
+        [InlineData("public", PrivacyEnum.Public)]
+        [InlineData("unlisted", PrivacyEnum.Unlisted)]
+        [InlineData("PRIVATE", PrivacyEnum.Private)]
+        [InlineData("PUBLIC", PrivacyEnum.Public)]
+        [InlineData("UNLISTED", PrivacyEnum.Unlisted)]
+        public void Privacy_CaseInsensitiveParsing_ShouldParseCorrectly(string privacyString, PrivacyEnum expectedValue)
+        {
+            // Act
+            var parsedValue = (PrivacyEnum)Enum.Parse(typeof(PrivacyEnum), privacyString, true);
+
+            // Assert
+            parsedValue.Should().Be(expectedValue);
+        }
+
+        [Theory]
+        [InlineData("InvalidValue")]
+        [InlineData("Protected")]
+        [InlineData("Secret")]
+        [InlineData("Hidden")]
+        public void Privacy_WithInvalidValue_ShouldThrowArgumentException(string invalidValue)
+        {
+            // Act
+            Action act = () => Enum.Parse(typeof(PrivacyEnum), invalidValue, true);
+
+            // Assert
+            act.Should().Throw<ArgumentException>();
+        }
+
+        [Fact]
+        public void Privacy_WithEmptyString_ShouldThrowArgumentException()
+        {
+            // Act
+            Action act = () => Enum.Parse(typeof(PrivacyEnum), "", true);
+
+            // Assert
+            act.Should().Throw<ArgumentException>();
+        }
     }
 }
