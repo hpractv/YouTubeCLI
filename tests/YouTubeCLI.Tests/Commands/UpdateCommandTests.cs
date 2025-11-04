@@ -278,7 +278,6 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             command.Privacy.Should().Be(PrivacyEnum.Private);
-            command.Privacy.Value.Should().Be(PrivacyEnum.Private);
         }
 
         [Fact]
@@ -295,7 +294,6 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             command.Privacy.Should().Be(PrivacyEnum.Public);
-            command.Privacy.Value.Should().Be(PrivacyEnum.Public);
         }
 
         [Fact]
@@ -312,7 +310,6 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             command.Privacy.Should().Be(PrivacyEnum.Unlisted);
-            command.Privacy.Value.Should().Be(PrivacyEnum.Unlisted);
         }
 
         [Fact]
