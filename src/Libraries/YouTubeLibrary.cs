@@ -212,7 +212,7 @@ namespace YouTubeCLI.Libraries
             }
             if (chatEnabled != null)
             {
-                _broadcast.ContentDetails.EnableClosedCaptions = chatEnabled.Value;
+                _broadcast.ContentDetails.EnableLiveChat = chatEnabled.Value;
             }
 
             var _updateRequest = service.LiveBroadcasts.Update(_broadcast, _broadcastPart);
