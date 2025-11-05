@@ -15,5 +15,6 @@ namespace YouTubeCLI.Models
         public string privacy { get; set; }
         public string thumbnail { get; set; }
         public bool active { get; set; }
+        public bool chatEnabled { get; set; }
     }
 }

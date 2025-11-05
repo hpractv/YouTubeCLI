@@ -163,6 +163,7 @@ namespace YouTubeCLI.Libraries
                             EnableDvr = false,
                             EnableEmbed = true,
                             RecordFromStart = true,
+                            EnableLiveChat = broadcast.chatEnabled,
                         },
                         Kind = "youtube#liveBroadcast"
                     }, _broadcastPart);
