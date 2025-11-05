@@ -49,6 +49,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    needs: check-changes
 
     steps:
       - name: Checkout code
@@ -59,6 +60,63 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Get latest main branch release
+        if: needs.check-changes.outputs.src_changed == 'false'
+        id: get-release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            
+            // Find the latest non-prerelease from main branch
+            const mainRelease = releases.find(release => 
+              !release.prerelease && 
+              !release.tag_name.includes('-pr')
+            );
+            
+            if (mainRelease) {
+              console.log(`Found latest main release: ${mainRelease.tag_name}`);
+              core.setOutput('tag_name', mainRelease.tag_name);
+              core.setOutput('release_id', mainRelease.id);
+              return mainRelease.tag_name;
+            } else {
+              console.log('No main branch release found');
+              core.setOutput('tag_name', '');
+              core.setOutput('release_id', '');
+              return '';
+            }
+
+      - name: Download artifacts from main release
+        if: needs.check-changes.outputs.src_changed == 'false' && steps.get-release.outputs.tag_name != ''
+        run: |
+          TAG_NAME="${{ steps.get-release.outputs.tag_name }}"
+          echo "Downloading artifacts from release: $TAG_NAME"
+          
+          # Download the Linux x64 artifact for testing
+          ARTIFACT_NAME="ytc-linux-x64-${TAG_NAME#v}.tar.gz"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/$TAG_NAME/$ARTIFACT_NAME"
+          
+          echo "Downloading from: $DOWNLOAD_URL"
+          mkdir -p ./artifacts-from-main
+          curl -L -o "./artifacts-from-main/$ARTIFACT_NAME" "$DOWNLOAD_URL" || {
+            echo "Failed to download artifact from main release"
+            echo "Will build from source instead"
+            echo "skip_artifact_test=true" >> $GITHUB_ENV
+          }
+          
+          if [ -f "./artifacts-from-main/$ARTIFACT_NAME" ]; then
+            echo "Successfully downloaded artifact"
+            cd ./artifacts-from-main
+            tar -xzf "$ARTIFACT_NAME"
+            echo "Extracted artifact contents:"
+            ls -la
+            echo "skip_artifact_test=false" >> $GITHUB_ENV
+          fi
+
       - name: Restore dependencies
         run: dotnet restore ${{ env.PROJECT_PATH }}
 
@@ -66,10 +124,21 @@ jobs:
         run: dotnet restore ${{ env.TEST_PROJECT_PATH }}
 
       - name: Build project
+        if: needs.check-changes.outputs.src_changed == 'true' || env.skip_artifact_test == 'true'
         run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
 
       - name: Build test project
         run: dotnet build ${{ env.TEST_PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Display test context
+        run: |
+          if [ "${{ needs.check-changes.outputs.src_changed }}" == "false" ] && [ "${{ env.skip_artifact_test }}" != "true" ]; then
+            echo "ℹ️  Testing against artifacts from main branch release: ${{ steps.get-release.outputs.tag_name }}"
+            echo "📦 Application code unchanged - using pre-built release artifacts"
+          else
+            echo "ℹ️  Testing against freshly built code from this PR"
+            echo "🔨 Application code changed or no main release available - building from source"
+          fi
 
       - name: Run tests with coverage
         run: |
@@ -181,10 +250,23 @@ jobs:
             // Create comprehensive comment
             const testStatus = failedTests > 0 ? '❌' : '✅';
             const coverageStatus = lineCoverage >= 80 ? '🟢' : lineCoverage >= 60 ? '🟡' : '🔴';
+            
+            // Determine test context
+            const srcChanged = '${{ needs.check-changes.outputs.src_changed }}' === 'true';
+            const releaseTag = '${{ steps.get-release.outputs.tag_name }}';
+            let testContext = '';
+            
+            if (!srcChanged && releaseTag) {
+              testContext = '> 📦 **Testing Context:** Tests run against artifacts from main branch release `' + releaseTag + '`\n> (Application code unchanged in this PR)\n\n';
+            } else if (!srcChanged) {
+              testContext = '> 🔨 **Testing Context:** Tests run against freshly built code\n> (Application code unchanged, but no main release artifacts available)\n\n';
+            } else {
+              testContext = '> 🔨 **Testing Context:** Tests run against freshly built code from this PR\n\n';
+            }
 
             const commentBody = `## ${testStatus} Test Results & ${coverageStatus} Code Coverage
 
-            ### 🧪 Test Summary
+            ${testContext}### 🧪 Test Summary
             | Metric | Count |
             |--------|-------|
             | **Total Tests** | ${totalTests} |
