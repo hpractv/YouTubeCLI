@@ -121,5 +121,55 @@ namespace YouTubeCLI.Tests.Commands
             args.Should().Contain("secrets.json");
             args.Should().Contain("upcoming");
         }
+
+        [Fact]
+        public void ListCommand_Properties_ShouldBeSettable()
+        {
+            // Arrange & Act
+            var command = new ListCommand
+            {
+                YouTubeUser = "user123",
+                ClientSecretsFile = "my-secrets.json",
+                BroadcastFile = "my-broadcasts.json",
+                Upcoming = true
+            };
+
+            // Assert
+            command.YouTubeUser.Should().Be("user123");
+            command.ClientSecretsFile.Should().Be("my-secrets.json");
+            command.BroadcastFile.Should().Be("my-broadcasts.json");
+            command.Upcoming.Should().BeTrue();
+        }
+
+        [Fact]
+        public void ListCommand_Upcoming_ShouldDefaultToFalse()
+        {
+            // Arrange & Act
+            var command = new ListCommand();
+
+            // Assert
+            command.Upcoming.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("   ")]
+        [InlineData("\t")]
+        [InlineData("\n")]
+        public void CreateArgs_WithWhitespaceClientSecrets_ShouldNotIncludeClientSecrets(string whitespace)
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = whitespace,
+                BroadcastFile = "broadcasts.json"
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().NotContain("client-secrets");
+        }
     }
 }

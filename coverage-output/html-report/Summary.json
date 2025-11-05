@@ -1,0 +1,38 @@
+{
+  "summary": {
+    "generatedon": "2025-11-05T05:11:11Z",
+    "parser": "MultiReport (2x Cobertura)",
+    "assemblies": 1,
+    "classes": 14,
+    "files": 14,
+    "coveredlines": 107,
+    "uncoveredlines": 312,
+    "coverablelines": 419,
+    "totallines": 1106,
+    "linecoverage": 25.5,
+    "coveredbranches": 55,
+    "totalbranches": 174,
+    "branchcoverage": 31.6,
+    "coveredmethods": 24,
+    "totalmethods": 45,
+    "methodcoverage": 53.3
+ },
+  "coverage": {
+    "assemblies": [
+      { "name": "ytc", "classes": 14, "coverage": 25.5, "coveredlines": 107, "coverablelines": 419, "totallines": 1106, "branchcoverage": 31.6, "coveredbranches": 55, "totalbranches": 174, "methodcoverage": 53.3, "coveredmethods": 24, "totalmethods": 45, "classesinassembly": [
+        { "name": "YouTubeCLI.Commands.CommandsBase", "coverage": 44.4, "coveredlines": 4, "coverablelines": 9, "totallines": 43, "branchcoverage": 100, "coveredbranches": 2, "totalbranches": 2, "methodcoverage": 25, "coveredmethods": 1, "totalmethods": 4 },
+        { "name": "YouTubeCLI.Commands.Constants", "coverage": 100, "coveredlines": 10, "coverablelines": 10, "totallines": 25, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 100, "coveredmethods": 1, "totalmethods": 1 },
+        { "name": "YouTubeCLI.Commands.CreateCommand", "coverage": 19.7, "coveredlines": 19, "coverablelines": 96, "totallines": 203, "branchcoverage": 19.6, "coveredbranches": 11, "totalbranches": 56, "methodcoverage": 50, "coveredmethods": 1, "totalmethods": 2 },
+        { "name": "YouTubeCLI.Commands.EndCommand", "coverage": 83.3, "coveredlines": 5, "coverablelines": 6, "totallines": 34, "branchcoverage": 83.3, "coveredbranches": 5, "totalbranches": 6, "methodcoverage": 50, "coveredmethods": 1, "totalmethods": 2 },
+        { "name": "YouTubeCLI.Commands.ListCommand", "coverage": 33.3, "coveredlines": 7, "coverablelines": 21, "totallines": 75, "branchcoverage": 58.3, "coveredbranches": 7, "totalbranches": 12, "methodcoverage": 50, "coveredmethods": 1, "totalmethods": 2 },
+        { "name": "YouTubeCLI.Commands.UpdateCommand", "coverage": 42.8, "coveredlines": 21, "coverablelines": 49, "totallines": 150, "branchcoverage": 43.3, "coveredbranches": 13, "totalbranches": 30, "methodcoverage": 33.3, "coveredmethods": 1, "totalmethods": 3 },
+        { "name": "YouTubeCLI.Examples.CrossPlatformTest", "coverage": 0, "coveredlines": 0, "coverablelines": 23, "totallines": 51, "branchcoverage": 0, "coveredbranches": 0, "totalbranches": 8, "methodcoverage": 0, "coveredmethods": 0, "totalmethods": 1 },
+        { "name": "YouTubeCLI.Examples.OSDetectionExample", "coverage": 0, "coveredlines": 0, "coverablelines": 19, "totallines": 51, "branchcoverage": 0, "coveredbranches": 0, "totalbranches": 6, "methodcoverage": 0, "coveredmethods": 0, "totalmethods": 1 },
+        { "name": "YouTubeCLI.Libraries.BroadcastLibrary", "coverage": 100, "coveredlines": 3, "coverablelines": 3, "totallines": 16, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 100, "coveredmethods": 1, "totalmethods": 1 },
+        { "name": "YouTubeCLI.Libraries.YouTubeLibrary", "coverage": 10.4, "coveredlines": 16, "coverablelines": 153, "totallines": 281, "branchcoverage": 22.5, "coveredbranches": 9, "totalbranches": 40, "methodcoverage": 35.7, "coveredmethods": 5, "totalmethods": 14 },
+        { "name": "YouTubeCLI.Models.LinkDetails", "coverage": 100, "coveredlines": 2, "coverablelines": 2, "totallines": 13, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 100, "coveredmethods": 2, "totalmethods": 2 },
+        { "name": "YouTubeCLI.Models.LiveBroadcastInfo", "coverage": 100, "coveredlines": 2, "coverablelines": 2, "totallines": 24, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 100, "coveredmethods": 2, "totalmethods": 2 },
+        { "name": "YouTubeCLI.Utilities.OSDetection", "coverage": 81.8, "coveredlines": 18, "coverablelines": 22, "totallines": 110, "branchcoverage": 57.1, "coveredbranches": 8, "totalbranches": 14, "methodcoverage": 100, "coveredmethods": 8, "totalmethods": 8 },
+        { "name": "YouTubeCLI.YouTubeCLI", "coverage": 0, "coveredlines": 0, "coverablelines": 4, "totallines": 30, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 0, "coveredmethods": 0, "totalmethods": 2 } ] } ]
+  }
+}
