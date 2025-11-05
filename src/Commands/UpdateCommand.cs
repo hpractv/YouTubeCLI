@@ -43,6 +43,10 @@ namespace YouTubeCLI.Commands
             CommandOptionType.SingleOrNoValue)]
         public PrivacyEnum? Privacy { get; set; }
 
+        [Option("-e|--chat-enabled <value>", "Set chat enabled to true or false",
+            CommandOptionType.SingleOrNoValue)]
+        public bool? ChatEnabled { get; set; }
+
         private YouTubeCLI Parent { get; set; }
 
         public override List<string> CreateArgs()
@@ -85,6 +89,12 @@ namespace YouTubeCLI.Commands
                 _args.Add(Privacy.ToString());
             }
 
+            if (ChatEnabled != null)
+            {
+                _args.Add("chat-enabled");
+                _args.Add(ChatEnabled.ToString());
+            }
+
             return _args;
         }
 
@@ -105,7 +115,7 @@ namespace YouTubeCLI.Commands
 
                 if (!string.IsNullOrWhiteSpace(YouTubeId))
                 {
-                    _updateBroadcast(_youTube, YouTubeId, AutoStart, AutoStop, Privacy);
+                    _updateBroadcast(_youTube, YouTubeId, AutoStart, AutoStop, Privacy, ChatEnabled);
                 }
 
                 if (!string.IsNullOrWhiteSpace(BroadcastFile))
@@ -116,8 +126,9 @@ namespace YouTubeCLI.Commands
                         var autoStart = bool.Parse(b[Constants.AutoStart_COLUMN]);
                         var autoStop = bool.Parse(b[Constants.AutoStop_COLUMN]);
                         var privacy = (PrivacyEnum)Enum.Parse(typeof(PrivacyEnum), b[Constants.Privacy_COLUMN], true);
+                        var chatEnabled = ChatEnabled;
 
-                        _updateBroadcast(_youTube, b[Constants.YouTubeId_COLUMN], autoStart, autoStop, privacy);
+                        _updateBroadcast(_youTube, b[Constants.YouTubeId_COLUMN], autoStart, autoStop, privacy, chatEnabled);
                     }
                 }
             }
@@ -131,10 +142,10 @@ namespace YouTubeCLI.Commands
             }
             return _success;
 
-            void _updateBroadcast(YouTubeLibrary youTubelibrary, string youTubeId, bool? autoStart, bool? autoStop, PrivacyEnum? privacy)
+            void _updateBroadcast(YouTubeLibrary youTubelibrary, string youTubeId, bool? autoStart, bool? autoStop, PrivacyEnum? privacy, bool? chatEnabled)
             {
                 Console.WriteLine($"Updating Broadcast: {youTubeId}");
-                var _updateBroadcast = Task.Run(() => youTubelibrary.UpdateBroadcast(youTubeId, autoStart, autoStop, privacy));
+                var _updateBroadcast = Task.Run(() => youTubelibrary.UpdateBroadcast(youTubeId, autoStart, autoStop, privacy, chatEnabled));
                 _updateBroadcast.Wait();
                 if (_updateBroadcast.IsCompletedSuccessfully)
                 {

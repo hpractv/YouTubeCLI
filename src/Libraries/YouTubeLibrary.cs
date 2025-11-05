@@ -163,6 +163,7 @@ namespace YouTubeCLI.Libraries
                             EnableDvr = false,
                             EnableEmbed = true,
                             RecordFromStart = true,
+                            EnableLiveChat = broadcast.chatEnabled,
                         },
                         Kind = "youtube#liveBroadcast"
                     }, _broadcastPart);
@@ -189,7 +190,7 @@ namespace YouTubeCLI.Libraries
             return _builtBroadcasts.ToArray();
         }
 
-        public async Task UpdateBroadcast(string broadcastId, bool? autoStart, bool? autoStop, PrivacyEnum? privacy)
+        public async Task UpdateBroadcast(string broadcastId, bool? autoStart, bool? autoStop, PrivacyEnum? privacy, bool? chatEnabled = null)
         {
             var _broadcastsRequest = service.LiveBroadcasts.List(_broadcastPart);
             _broadcastsRequest.Id = broadcastId;
@@ -208,6 +209,10 @@ namespace YouTubeCLI.Libraries
             if (privacy != null)
             {
                 _broadcast.Status.PrivacyStatus = privacy.ToString().ToLower();
+            }
+            if (chatEnabled != null)
+            {
+                _broadcast.ContentDetails.EnableLiveChat = chatEnabled.Value;
             }
 
             var _updateRequest = service.LiveBroadcasts.Update(_broadcast, _broadcastPart);
