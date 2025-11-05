@@ -8,6 +8,7 @@ namespace YouTubeCLI.Commands
         public const string AutoStart_COLUMN = "AutoStart";
         public const string AutoStop_COLUMN = "AutoStop";
         public const string Privacy_COLUMN = "Privacy";
+        public const string ChatEnabled_COLUMN = "ChatEnabled";
         public const string Url_COLUMN = "URL";
         public const string Link_COLUMN = "Link";
 
@@ -18,6 +19,7 @@ namespace YouTubeCLI.Commands
             AutoStart_COLUMN,
             AutoStop_COLUMN,
             Privacy_COLUMN,
+            ChatEnabled_COLUMN,
             Url_COLUMN,
             Link_COLUMN
         };
