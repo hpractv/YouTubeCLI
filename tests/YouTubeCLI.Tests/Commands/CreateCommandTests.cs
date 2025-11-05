@@ -244,5 +244,154 @@ namespace YouTubeCLI.Tests.Commands
             broadcast.Should().NotBeNull();
             broadcast.privacy.Should().Be(privacyValue);
         }
+
+        [Fact]
+        public void Broadcast_ChatEnabled_WithTrueValue_ShouldBeSetCorrectly()
+        {
+            // Arrange
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                dayOfWeek = 1,
+                broadcastStart = "10:00",
+                broadcastDurationInMinutes = 60,
+                stream = "test-stream",
+                autoStart = true,
+                autoStop = true,
+                privacy = "public",
+                active = true,
+                chatEnabled = true
+            };
+
+            // Act & Assert
+            broadcast.chatEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void Broadcast_ChatEnabled_WithFalseValue_ShouldBeSetCorrectly()
+        {
+            // Arrange
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                dayOfWeek = 1,
+                broadcastStart = "10:00",
+                broadcastDurationInMinutes = 60,
+                stream = "test-stream",
+                autoStart = true,
+                autoStop = true,
+                privacy = "public",
+                active = true,
+                chatEnabled = false
+            };
+
+            // Act & Assert
+            broadcast.chatEnabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Broadcast_ChatEnabled_DefaultValue_ShouldBeFalse()
+        {
+            // Arrange
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                dayOfWeek = 1,
+                broadcastStart = "10:00",
+                broadcastDurationInMinutes = 60,
+                stream = "test-stream",
+                autoStart = true,
+                autoStop = true,
+                privacy = "public",
+                active = true
+                // chatEnabled not set
+            };
+
+            // Act & Assert
+            // In C#, uninitialized bool defaults to false
+            broadcast.chatEnabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Broadcast_ChatEnabled_ShouldBeBooleanType()
+        {
+            // Arrange
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                chatEnabled = true
+            };
+
+            // Act & Assert
+            var chatEnabledValue = broadcast.chatEnabled;
+            chatEnabledValue.Should().Be(true);
+            // Verify it's a boolean by checking it can be used in boolean context
+            (chatEnabledValue is bool).Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Broadcast_ChatEnabled_AllValidValuesSupported(bool chatEnabledValue)
+        {
+            // Arrange
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                dayOfWeek = 1,
+                broadcastStart = "10:00",
+                broadcastDurationInMinutes = 60,
+                stream = "test-stream",
+                autoStart = true,
+                autoStop = true,
+                privacy = "public",
+                active = true,
+                chatEnabled = chatEnabledValue
+            };
+
+            // Act & Assert
+            broadcast.chatEnabled.Should().Be(chatEnabledValue);
+            broadcast.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void Broadcast_WithAllProperties_IncludingChatEnabled_ShouldBeSetCorrectly()
+        {
+            // Arrange & Act
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Test Broadcast",
+                dayOfWeek = 1,
+                broadcastStart = "10:00 am",
+                broadcastDurationInMinutes = 60,
+                stream = "HLS 720",
+                autoStart = true,
+                autoStop = false,
+                privacy = "unlisted",
+                thumbnail = "test.png",
+                active = true,
+                chatEnabled = true
+            };
+
+            // Assert
+            broadcast.id.Should().Be("test-id");
+            broadcast.name.Should().Be("Test Broadcast");
+            broadcast.dayOfWeek.Should().Be(1);
+            broadcast.broadcastStart.Should().Be("10:00 am");
+            broadcast.broadcastDurationInMinutes.Should().Be(60);
+            broadcast.stream.Should().Be("HLS 720");
+            broadcast.autoStart.Should().BeTrue();
+            broadcast.autoStop.Should().BeFalse();
+            broadcast.privacy.Should().Be("unlisted");
+            broadcast.thumbnail.Should().Be("test.png");
+            broadcast.active.Should().BeTrue();
+            broadcast.chatEnabled.Should().BeTrue();
+        }
     }
 }

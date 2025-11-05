@@ -370,5 +370,141 @@ namespace YouTubeCLI.Tests.Commands
             // Assert
             act.Should().Throw<ArgumentException>();
         }
+
+        [Fact]
+        public void CreateArgs_WithChatEnabledTrue_ShouldIncludeChatEnabledArgument()
+        {
+            // Arrange
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                ChatEnabled = true
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("chat-enabled");
+            args.Should().Contain("True");
+        }
+
+        [Fact]
+        public void CreateArgs_WithChatEnabledFalse_ShouldIncludeChatEnabledArgument()
+        {
+            // Arrange
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                ChatEnabled = false
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("chat-enabled");
+            args.Should().Contain("False");
+        }
+
+        [Fact]
+        public void CreateArgs_WithChatEnabledNull_ShouldNotIncludeChatEnabledArgument()
+        {
+            // Arrange
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                ChatEnabled = null
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().NotContain("chat-enabled");
+        }
+
+        [Fact]
+        public void CreateArgs_WithAllOptionalArgumentsIncludingChatEnabled_ShouldIncludeAllArguments()
+        {
+            // Arrange
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                AutoStart = true,
+                AutoStop = false,
+                Privacy = PrivacyEnum.Public,
+                ChatEnabled = true
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("auto-start");
+            args.Should().Contain("True");
+            args.Should().Contain("auto-stop");
+            args.Should().Contain("False");
+            args.Should().Contain("privacy");
+            args.Should().Contain("Public");
+            args.Should().Contain("chat-enabled");
+            args.Should().Contain("True");
+        }
+
+        [Fact]
+        public void ChatEnabled_WithTrueValue_ShouldBeSetCorrectly()
+        {
+            // Arrange & Act
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                ChatEnabled = true
+            };
+
+            // Assert
+            command.ChatEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void ChatEnabled_WithFalseValue_ShouldBeSetCorrectly()
+        {
+            // Arrange & Act
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                ChatEnabled = false
+            };
+
+            // Assert
+            command.ChatEnabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ChatEnabled_WithNullValue_ShouldBeNull()
+        {
+            // Arrange & Act
+            var command = new UpdateCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                YouTubeId = "test-youtube-id",
+                ChatEnabled = null
+            };
+
+            // Assert
+            command.ChatEnabled.Should().BeNull();
+        }
     }
 }

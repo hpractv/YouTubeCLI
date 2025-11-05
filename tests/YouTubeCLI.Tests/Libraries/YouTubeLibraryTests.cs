@@ -217,7 +217,7 @@ namespace YouTubeCLI.Tests.Libraries
             
             // Verify the method signature has nullable parameters for optional values
             var parameters = updateBroadcastMethod!.GetParameters();
-            parameters.Should().HaveCount(4, "UpdateBroadcast should have 4 parameters (broadcastId, autoStart, autoStop, privacy)");
+            parameters.Should().HaveCount(5, "UpdateBroadcast should have 5 parameters (broadcastId, autoStart, autoStop, privacy, chatEnabled)");
             
             var autoStartParam = parameters[1];
             autoStartParam.Name.Should().Be("autoStart");
@@ -230,6 +230,10 @@ namespace YouTubeCLI.Tests.Libraries
             var privacyParam = parameters[3];
             privacyParam.Name.Should().Be("privacy");
             privacyParam.ParameterType.Should().Be(typeof(PrivacyEnum?), "privacy should be nullable enum to allow unspecified values");
+            
+            var chatEnabledParam = parameters[4];
+            chatEnabledParam.Name.Should().Be("chatEnabled");
+            chatEnabledParam.ParameterType.Should().Be(typeof(bool?), "chatEnabled should be nullable bool to allow unspecified values");
         }
 
         [Fact]
@@ -240,14 +244,16 @@ namespace YouTubeCLI.Tests.Libraries
             // This is a structural test that documents the critical behavior.
             //
             // The implementation in YouTubeLibrary.cs contains these null checks:
-            // - Lines 200-203: if (autoStart != null) { _broadcast.ContentDetails.EnableAutoStart = autoStart.Value; }
-            // - Lines 204-207: if (autoStop != null) { _broadcast.ContentDetails.EnableAutoStop = autoStop.Value; }
-            // - Lines 208-211: if (privacy != null) { _broadcast.Status.PrivacyStatus = privacy.ToString().ToLower(); }
+            // - Lines 201-204: if (autoStart != null) { _broadcast.ContentDetails.EnableAutoStart = autoStart.Value; }
+            // - Lines 205-208: if (autoStop != null) { _broadcast.ContentDetails.EnableAutoStop = autoStop.Value; }
+            // - Lines 209-212: if (privacy != null) { _broadcast.Status.PrivacyStatus = privacy.ToString().ToLower(); }
+            // - Lines 213-218: if (chatEnabled != null) { _broadcast.Status.SelfDeclaredMadeForKids = !chatEnabled.Value; }
             //
             // These null checks ensure that:
             // 1. When autoStart is null, EnableAutoStart is NOT modified
             // 2. When autoStop is null, EnableAutoStop is NOT modified
             // 3. When privacy is null, PrivacyStatus is NOT modified
+            // 4. When chatEnabled is null, SelfDeclaredMadeForKids is NOT modified
             //
             // This pattern allows callers to update only the fields they specify,
             // leaving unspecified fields unchanged.
