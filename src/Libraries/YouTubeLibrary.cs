@@ -215,6 +215,10 @@ namespace YouTubeCLI.Libraries
             {
                 // Using SelfDeclaredMadeForKids to control chat: when true, chat is disabled
                 // When false, chat is enabled
+                if (_broadcast.Status == null)
+                {
+                    _broadcast.Status = new LiveBroadcastStatus();
+                }
                 _broadcast.Status.SelfDeclaredMadeForKids = !chatEnabled.Value;
             }
 
