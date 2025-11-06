@@ -35,7 +35,8 @@ namespace YouTubeCLI.Tests.Commands
             // Use reflection to set internal property
             var testModeProperty = typeof(CommandsBase).GetProperty("TestMode",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            testModeProperty.SetValue(command, true);
+            testModeProperty.Should().NotBeNull();
+            testModeProperty!.SetValue(command, true);
 
             // Act
             var args = command.CreateArgs();
@@ -51,7 +52,8 @@ namespace YouTubeCLI.Tests.Commands
             var command = new TestCommandsBase();
             var testModeProperty = typeof(CommandsBase).GetProperty("TestMode",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            testModeProperty.SetValue(command, false);
+            testModeProperty.Should().NotBeNull();
+            testModeProperty!.SetValue(command, false);
 
             // Act
             var args = command.CreateArgs();
@@ -68,7 +70,8 @@ namespace YouTubeCLI.Tests.Commands
             var command = new TestCommandsBase();
             var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            clearCredentialProperty.SetValue(command, true);
+            clearCredentialProperty.Should().NotBeNull();
+            clearCredentialProperty!.SetValue(command, true);
 
             // Act
             var args = command.CreateArgs();
@@ -85,7 +88,8 @@ namespace YouTubeCLI.Tests.Commands
             var command = new TestCommandsBase();
             var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var value = (bool)clearCredentialProperty.GetValue(command);
+            clearCredentialProperty.Should().NotBeNull();
+            var value = (bool)clearCredentialProperty!.GetValue(command)!;
 
             // Assert
             value.Should().BeFalse();
@@ -98,10 +102,11 @@ namespace YouTubeCLI.Tests.Commands
             var command = new TestCommandsBase();
             var testModeProperty = typeof(CommandsBase).GetProperty("TestMode",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            testModeProperty.Should().NotBeNull();
 
             // Act
-            testModeProperty.SetValue(command, true);
-            var value = (bool)testModeProperty.GetValue(command);
+            testModeProperty!.SetValue(command, true);
+            var value = (bool)testModeProperty.GetValue(command)!;
 
             // Assert
             value.Should().BeTrue();
@@ -114,7 +119,8 @@ namespace YouTubeCLI.Tests.Commands
             var command = new TestCommandsBase();
             var testModeProperty = typeof(CommandsBase).GetProperty("TestMode",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var value = (bool)testModeProperty.GetValue(command);
+            testModeProperty.Should().NotBeNull();
+            var value = (bool)testModeProperty!.GetValue(command)!;
 
             // Assert
             value.Should().BeFalse();
@@ -367,7 +373,8 @@ namespace YouTubeCLI.Tests.Commands
             var command = new TestCommandsBase();
             var testModeProperty = typeof(CommandsBase).GetProperty("TestMode",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            testModeProperty.SetValue(command, false);
+            testModeProperty.Should().NotBeNull();
+            testModeProperty!.SetValue(command, false);
 
             // Capture console output
             var originalOut = Console.Out;
