@@ -75,6 +75,7 @@ namespace YouTubeCLI.Tests.Commands
             Constants.AutoStart_COLUMN.Should().Be("AutoStart");
             Constants.AutoStop_COLUMN.Should().Be("AutoStop");
             Constants.Privacy_COLUMN.Should().Be("Privacy");
+            Constants.ChatEnabled_COLUMN.Should().Be("ChatEnabled");
             Constants.Url_COLUMN.Should().Be("URL");
             Constants.Link_COLUMN.Should().Be("Link");
         }
@@ -91,12 +92,13 @@ namespace YouTubeCLI.Tests.Commands
                 Constants.AutoStart_COLUMN,
                 Constants.AutoStop_COLUMN,
                 Constants.Privacy_COLUMN,
+                Constants.ChatEnabled_COLUMN,
                 Constants.Url_COLUMN,
                 Constants.Link_COLUMN
             };
 
             // Act & Assert
-            Constants.COLUMNS.Should().HaveCount(8);
+            Constants.COLUMNS.Should().HaveCount(9);
             Constants.COLUMNS.Should().BeEquivalentTo(expectedColumns);
         }
 
@@ -112,6 +114,7 @@ namespace YouTubeCLI.Tests.Commands
                 "AutoStart",
                 "AutoStop",
                 "Privacy",
+                "ChatEnabled",
                 "URL",
                 "Link"
             };
