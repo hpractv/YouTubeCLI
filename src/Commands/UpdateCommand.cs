@@ -112,6 +112,7 @@ namespace YouTubeCLI.Commands
                     YouTubeUser,
                     ClientSecretsFile);
 
+                ClearCredentialsIfRequested(_youTube);
 
                 if (!string.IsNullOrWhiteSpace(YouTubeId))
                 {

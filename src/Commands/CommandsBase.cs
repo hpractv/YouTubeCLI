@@ -17,6 +17,12 @@ namespace YouTubeCLI.Commands
            CommandOptionType.NoValue)]
         internal bool TestMode { get; set; }
 
+        [Option(
+            "-l|--clear-credential",
+            "Clear authorization credentials.",
+            CommandOptionType.NoValue)]
+        internal bool ClearCredential { get; set; }
+
         internal Broadcast getBroadcast(string broadcastFile, string id)
             => getBroadcasts(broadcastFile).Items.Single(b => b.id == id);
 
@@ -30,7 +36,19 @@ namespace YouTubeCLI.Commands
             {
                 _args.Add("testmode");
             }
+            _args.Add("clear-credential");
+            _args.Add(ClearCredential.ToString());
             return _args;
+        }
+
+        protected void ClearCredentialsIfRequested(YouTubeLibrary youTube)
+        {
+            if (ClearCredential)
+            {
+                Console.WriteLine("Clearing Credentials...");
+                youTube.ClearCredential().Wait();
+                Console.WriteLine("==================================");
+            }
         }
 
         protected virtual int OnExecute(CommandLineApplication app)

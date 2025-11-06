@@ -43,12 +43,6 @@ namespace YouTubeCLI.Commands
             Description = "Date to start the broadcasts on. '01/01/21' ")]
         public DateOnly? StartsOn { get; set; }
 
-        [Option(
-            "-l|--clear-credential",
-            "Clear authorization credentials.",
-            CommandOptionType.NoValue)]
-        internal bool ClearCredential { get; set; }
-
         public Broadcasts broadcasts { get; set; }
 
         private YouTubeCLI Parent { get; set; }
@@ -63,8 +57,6 @@ namespace YouTubeCLI.Commands
             _args.Add(ClientSecretsFile);
             _args.Add("occurrences");
             _args.Add(Occurrences.ToString());
-            _args.Add("clear-credential");
-            _args.Add(ClearCredential.ToString());
 
             if (!string.IsNullOrWhiteSpace(Id))
             {
@@ -119,11 +111,7 @@ namespace YouTubeCLI.Commands
                     Console.WriteLine("Test Mode: Only the first broadcast will be created");
                     Console.WriteLine("==================================");
                 }
-                if (ClearCredential){
-                    Console.WriteLine("Clearing Credentials...");
-                    _youTube.ClearCredential();
-                    Console.WriteLine("==================================");
-                }
+                ClearCredentialsIfRequested(_youTube);
                 foreach (var _broadcast in _active.Take(TestMode ? 1 : _active.Count()))
                 {
                     Console.WriteLine($"Creating {_broadcast.name}...");
