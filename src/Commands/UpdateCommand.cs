@@ -1,4 +1,4 @@
-using Google.Apis.YouTube.v3.Data;
+﻿using Google.Apis.YouTube.v3.Data;
 using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.Collections.Generic;
@@ -112,6 +112,7 @@ namespace YouTubeCLI.Commands
                     YouTubeUser,
                     ClientSecretsFile);
 
+                ClearCredentialsIfRequested(_youTube);
 
                 if (!string.IsNullOrWhiteSpace(YouTubeId))
                 {

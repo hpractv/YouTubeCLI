@@ -154,7 +154,9 @@ namespace YouTubeCLI.Libraries
                         Status = new LiveBroadcastStatus()
                         {
                             PrivacyStatus = broadcast.privacy.ToLower(),
-                            // SelfDeclaredMadeForKids = true, going to disable the chat by hand and not use this flag
+                            // Using SelfDeclaredMadeForKids to control chat: when true, chat is disabled
+                            // When false (default), chat is enabled
+                            SelfDeclaredMadeForKids = !broadcast.chatEnabled,
                         },
                         ContentDetails = new LiveBroadcastContentDetails()
                         {
@@ -211,7 +213,13 @@ namespace YouTubeCLI.Libraries
             }
             if (chatEnabled != null)
             {
-                _broadcast.ContentDetails.EnableClosedCaptions = chatEnabled.Value;
+                // Using SelfDeclaredMadeForKids to control chat: when true, chat is disabled
+                // When false, chat is enabled
+                if (_broadcast.Status == null)
+                {
+                    _broadcast.Status = new LiveBroadcastStatus();
+                }
+                _broadcast.Status.SelfDeclaredMadeForKids = !chatEnabled.Value;
             }
 
             var _updateRequest = service.LiveBroadcasts.Update(_broadcast, _broadcastPart);
