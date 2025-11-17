@@ -278,13 +278,14 @@ namespace YouTubeCLI.Libraries
         }
 
         public async Task<IEnumerable<LinkDetails>> ListBroadcastUrls(bool upcoming = false)
-           => (await ListBroadcasts("id,snippet"))
+           => (await ListBroadcasts("id,snippet,status"))
                 .Where(b => !upcoming ||
                     (upcoming && b.Snippet.ScheduledStartTime > DateTime.Now))
                 .Select(b => new LinkDetails
                 {
                     id = b.Id,
                     title = b.Snippet.Title,
+                    privacyStatus = b.Status?.PrivacyStatus ?? "unknown",
                 });
 
         public async Task<IEnumerable<LinkDetails>> ListUpcomingBroadcastUrls()

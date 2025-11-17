@@ -43,7 +43,7 @@ namespace YouTubeCLI.Commands
                 Console.WriteLine($"Getting{(Upcoming ? " Upcoming" : "")} Broadcasts.");
                 foreach (var _broadcast in _broadcasts.Result)
                 {
-                    Console.WriteLine($"{_broadcast.title}: {_broadcast.broadcastUrl}");
+                    Console.WriteLine($"{_broadcast.title} ({_broadcast.privacyStatus}): {_broadcast.broadcastUrl}");
                 }
             }
             catch (Exception _exc)
