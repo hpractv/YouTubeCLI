@@ -59,6 +59,39 @@ namespace YouTubeCLI.Tests.Models
             linkDetails.title.Should().Be("My Test Title");
         }
 
+        [Fact]
+        public void LinkDetails_PrivacyStatus_ShouldBeSettable()
+        {
+            // Arrange & Act
+            var linkDetails = new LinkDetails
+            {
+                id = "abc123",
+                title = "My Test Title",
+                privacyStatus = "public"
+            };
+
+            // Assert
+            linkDetails.privacyStatus.Should().Be("public");
+        }
+
+        [Theory]
+        [InlineData("public")]
+        [InlineData("private")]
+        [InlineData("unlisted")]
+        public void LinkDetails_PrivacyStatus_ShouldHandleDifferentStatuses(string status)
+        {
+            // Arrange & Act
+            var linkDetails = new LinkDetails
+            {
+                id = "test123",
+                title = "Test Broadcast",
+                privacyStatus = status
+            };
+
+            // Assert
+            linkDetails.privacyStatus.Should().Be(status);
+        }
+
         [Theory]
         [InlineData("")]
         [InlineData("short")]
