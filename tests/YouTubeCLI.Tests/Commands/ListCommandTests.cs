@@ -269,7 +269,7 @@ namespace YouTubeCLI.Tests.Commands
             var output = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
 
             // Assert - Verify the format matches: "Title (privacyStatus): URL"
-            output.Should().MatchRegex(@"^.+ \(.+\): https://youtu\.be/.+$");
+            output.Should().MatchRegex(@"^[^(]+\([^)]+\): https://youtu\.be/[^\s]+$");
             output.Should().StartWith(linkDetails.title);
             output.Should().Contain($"({linkDetails.privacyStatus})");
             output.Should().EndWith(linkDetails.broadcastUrl);
