@@ -8,20 +8,22 @@ namespace YouTubeCLI.Tests.Commands
 {
     public class ListCommandTests
     {
+        private static System.Reflection.PropertyInfo GetClearCredentialProperty()
+        {
+            var property = typeof(CommandsBase).GetProperty("ClearCredential",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            property.Should().NotBeNull();
+            return property!;
+        }
+
         private static void SetClearCredential(CommandsBase command, bool value)
         {
-            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            clearCredentialProperty.Should().NotBeNull();
-            clearCredentialProperty!.SetValue(command, value);
+            GetClearCredentialProperty().SetValue(command, value);
         }
 
         private static bool GetClearCredential(CommandsBase command)
         {
-            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            clearCredentialProperty.Should().NotBeNull();
-            return (bool)clearCredentialProperty!.GetValue(command)!;
+            return (bool)GetClearCredentialProperty().GetValue(command)!;
         }
 
 
