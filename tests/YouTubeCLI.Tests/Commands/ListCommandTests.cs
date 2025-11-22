@@ -9,6 +9,25 @@ namespace YouTubeCLI.Tests.Commands
 {
     public class ListCommandTests
     {
+        private static System.Reflection.PropertyInfo GetClearCredentialProperty()
+        {
+            var property = typeof(CommandsBase).GetProperty("ClearCredential",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            property.Should().NotBeNull();
+            return property!;
+        }
+
+        private static void SetClearCredential(CommandsBase command, bool value)
+        {
+            GetClearCredentialProperty().SetValue(command, value);
+        }
+
+        private static bool GetClearCredential(CommandsBase command)
+        {
+            return (bool)GetClearCredentialProperty().GetValue(command)!;
+        }
+
+
         [Fact]
         public void CreateArgs_WithRequiredArguments_ShouldIncludeAllArguments()
         {
@@ -290,11 +309,64 @@ namespace YouTubeCLI.Tests.Commands
             foreach (var broadcast in broadcasts)
             {
                 var output = $"{broadcast.title} ({broadcast.privacyStatus}): {broadcast.broadcastUrl}";
-                
+
                 output.Should().Contain($"({broadcast.privacyStatus})");
                 output.Should().Contain(broadcast.title);
                 output.Should().Contain(broadcast.broadcastUrl);
             }
+        }
+
+        [Fact]
+        public void CreateArgs_WithClearCredentialTrue_ShouldIncludeClearCredentialFlag()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json"
+            };
+
+            SetClearCredential(command, true);
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("clear-credential");
+            args.Should().Contain("True");
+        }
+
+        [Fact]
+        public void CreateArgs_WithClearCredentialFalse_ShouldIncludeClearCredentialAsFalse()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json"
+            };
+
+            SetClearCredential(command, false);
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("clear-credential");
+            args.Should().Contain("False");
+        }
+
+        [Fact]
+        public void ClearCredential_ShouldDefaultToFalse()
+        {
+            // Arrange & Act
+            var command = new ListCommand();
+            var value = GetClearCredential(command);
+
+            // Assert
+            value.Should().BeFalse();
         }
     }
 }

@@ -165,6 +165,15 @@ Lists existing YouTube broadcasts.
 **Optional Options**:
 - `-p, --upcoming`: List only upcoming broadcasts
 
+**Output Format**:
+
+Each broadcast entry displays the following information:
+```
+Broadcast Title (privacyStatus): broadcastUrl
+```
+
+**Note**: The privacy status (e.g., `public`, `private`, `unlisted`) is displayed in parentheses after the broadcast title, followed by the broadcast URL. This allows you to quickly identify the privacy setting for each broadcast.
+
 **Examples**:
 ```bash
 # List all broadcasts
