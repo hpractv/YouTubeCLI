@@ -8,6 +8,23 @@ namespace YouTubeCLI.Tests.Commands
 {
     public class ListCommandTests
     {
+        private static void SetClearCredential(CommandsBase command, bool value)
+        {
+            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            clearCredentialProperty.Should().NotBeNull();
+            clearCredentialProperty!.SetValue(command, value);
+        }
+
+        private static bool GetClearCredential(CommandsBase command)
+        {
+            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            clearCredentialProperty.Should().NotBeNull();
+            return (bool)clearCredentialProperty!.GetValue(command)!;
+        }
+
+
         [Fact]
         public void CreateArgs_WithRequiredArguments_ShouldIncludeAllArguments()
         {
@@ -183,11 +200,7 @@ namespace YouTubeCLI.Tests.Commands
                 BroadcastFile = "broadcasts.json"
             };
             
-            // Use reflection to set the internal ClearCredential property
-            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            clearCredentialProperty.Should().NotBeNull();
-            clearCredentialProperty!.SetValue(command, true);
+            SetClearCredential(command, true);
 
             // Act
             var args = command.CreateArgs();
@@ -208,11 +221,7 @@ namespace YouTubeCLI.Tests.Commands
                 BroadcastFile = "broadcasts.json"
             };
             
-            // Use reflection to set the internal ClearCredential property
-            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            clearCredentialProperty.Should().NotBeNull();
-            clearCredentialProperty!.SetValue(command, false);
+            SetClearCredential(command, false);
 
             // Act
             var args = command.CreateArgs();
@@ -227,10 +236,7 @@ namespace YouTubeCLI.Tests.Commands
         {
             // Arrange & Act
             var command = new ListCommand();
-            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            clearCredentialProperty.Should().NotBeNull();
-            var value = (bool)clearCredentialProperty!.GetValue(command)!;
+            var value = GetClearCredential(command);
 
             // Assert
             value.Should().BeFalse();
