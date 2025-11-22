@@ -37,6 +37,7 @@ namespace YouTubeCLI.Commands
                 broadcasts = getBroadcasts(BroadcastFile);
 
                 var _youTubeLibrary = new YouTubeLibrary(YouTubeUser, ClientSecretsFile);
+                ClearCredentialsIfRequested(_youTubeLibrary);
                 var _broadcasts = Task.Run<IEnumerable<LinkDetails>>(() => _youTubeLibrary.ListBroadcastUrls(Upcoming));
                 _broadcasts.Wait();
 
