@@ -171,5 +171,69 @@ namespace YouTubeCLI.Tests.Commands
             // Assert
             args.Should().NotContain("client-secrets");
         }
+
+        [Fact]
+        public void CreateArgs_WithClearCredentialTrue_ShouldIncludeClearCredentialFlag()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json"
+            };
+            
+            // Use reflection to set the internal ClearCredential property
+            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            clearCredentialProperty.Should().NotBeNull();
+            clearCredentialProperty!.SetValue(command, true);
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("clear-credential");
+            args.Should().Contain("True");
+        }
+
+        [Fact]
+        public void CreateArgs_WithClearCredentialFalse_ShouldIncludeClearCredentialAsFalse()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json"
+            };
+            
+            // Use reflection to set the internal ClearCredential property
+            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            clearCredentialProperty.Should().NotBeNull();
+            clearCredentialProperty!.SetValue(command, false);
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("clear-credential");
+            args.Should().Contain("False");
+        }
+
+        [Fact]
+        public void ClearCredential_ShouldDefaultToFalse()
+        {
+            // Arrange & Act
+            var command = new ListCommand();
+            var clearCredentialProperty = typeof(CommandsBase).GetProperty("ClearCredential",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            clearCredentialProperty.Should().NotBeNull();
+            var value = (bool)clearCredentialProperty!.GetValue(command)!;
+
+            // Assert
+            value.Should().BeFalse();
+        }
     }
 }
