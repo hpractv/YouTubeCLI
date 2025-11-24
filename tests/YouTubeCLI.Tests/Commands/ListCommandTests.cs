@@ -288,7 +288,7 @@ namespace YouTubeCLI.Tests.Commands
             var output = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
 
             // Assert - Verify the format matches: "Title (privacyStatus): URL"
-            output.Should().MatchRegex(@"^[^(]+\([^)]+\): https://youtu\.be/[^\s]+$");
+            output.Should().MatchRegex(@"^.+ \([^)]+\): https://youtu\.be/[^\s]+$");
             output.Should().StartWith(linkDetails.title);
             output.Should().Contain($"({linkDetails.privacyStatus})");
             output.Should().EndWith(linkDetails.broadcastUrl);
@@ -314,6 +314,28 @@ namespace YouTubeCLI.Tests.Commands
                 output.Should().Contain(broadcast.title);
                 output.Should().Contain(broadcast.broadcastUrl);
             }
+        }
+
+        [Fact]
+        public void ListCommand_OutputFormat_WithParenthesesInTitle_ShouldMatchPattern()
+        {
+            // Arrange
+            var linkDetails = new LinkDetails
+            {
+                title = "My (Special) Broadcast",
+                id = "abc123",
+                privacyStatus = "public"
+            };
+
+            // Act
+            var output = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
+
+            // Assert - Verify pattern matches titles with parentheses
+            output.Should().Be("My (Special) Broadcast (public): https://youtu.be/abc123");
+            output.Should().MatchRegex(@"^.+ \([^)]+\): https://youtu\.be/[^\s]+$");
+            output.Should().StartWith(linkDetails.title);
+            output.Should().Contain($"({linkDetails.privacyStatus})");
+            output.Should().EndWith(linkDetails.broadcastUrl);
         }
 
         [Fact]
