@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 using YouTubeCLI.Commands;
+using YouTubeCLI.Models;
 
 namespace YouTubeCLI.Tests.Commands
 {
@@ -192,6 +193,152 @@ namespace YouTubeCLI.Tests.Commands
         }
 
         [Fact]
+        public void ListCommand_OutputFormat_ShouldIncludePrivacyStatus_Public()
+        {
+            // Arrange
+            var linkDetails = new LinkDetails
+            {
+                title = "Test Broadcast",
+                id = "abc123",
+                privacyStatus = "public"
+            };
+
+            // Act
+            var expectedOutput = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
+
+            // Assert
+            expectedOutput.Should().Be("Test Broadcast (public): https://youtu.be/abc123");
+            expectedOutput.Should().Contain("(public)");
+        }
+
+        [Fact]
+        public void ListCommand_OutputFormat_ShouldIncludePrivacyStatus_Private()
+        {
+            // Arrange
+            var linkDetails = new LinkDetails
+            {
+                title = "Private Stream",
+                id = "xyz789",
+                privacyStatus = "private"
+            };
+
+            // Act
+            var expectedOutput = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
+
+            // Assert
+            expectedOutput.Should().Be("Private Stream (private): https://youtu.be/xyz789");
+            expectedOutput.Should().Contain("(private)");
+        }
+
+        [Fact]
+        public void ListCommand_OutputFormat_ShouldIncludePrivacyStatus_Unlisted()
+        {
+            // Arrange
+            var linkDetails = new LinkDetails
+            {
+                title = "Unlisted Video",
+                id = "def456",
+                privacyStatus = "unlisted"
+            };
+
+            // Act
+            var expectedOutput = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
+
+            // Assert
+            expectedOutput.Should().Be("Unlisted Video (unlisted): https://youtu.be/def456");
+            expectedOutput.Should().Contain("(unlisted)");
+        }
+
+        [Theory]
+        [InlineData("public", "Test Public", "pub123")]
+        [InlineData("private", "Test Private", "prv456")]
+        [InlineData("unlisted", "Test Unlisted", "unl789")]
+        public void ListCommand_OutputFormat_ShouldIncludePrivacyStatus_MultipleStates(
+            string privacyStatus, string title, string id)
+        {
+            // Arrange
+            var linkDetails = new LinkDetails
+            {
+                title = title,
+                id = id,
+                privacyStatus = privacyStatus
+            };
+
+            // Act
+            var expectedOutput = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
+
+            // Assert
+            expectedOutput.Should().Contain($"({privacyStatus})");
+            expectedOutput.Should().Contain($"https://youtu.be/{id}");
+            expectedOutput.Should().Contain(title);
+        }
+
+        [Fact]
+        public void ListCommand_OutputFormat_ShouldMatchExpectedPattern()
+        {
+            // Arrange
+            var linkDetails = new LinkDetails
+            {
+                title = "My Broadcast",
+                id = "test123",
+                privacyStatus = "public"
+            };
+
+            // Act
+            var output = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
+
+            // Assert - Verify the format matches: "Title (privacyStatus): URL"
+            output.Should().MatchRegex(@"^.+ \([^)]+\): https://youtu\.be/[^\s]+$");
+            output.Should().StartWith(linkDetails.title);
+            output.Should().Contain($"({linkDetails.privacyStatus})");
+            output.Should().EndWith(linkDetails.broadcastUrl);
+        }
+
+        [Fact]
+        public void ListCommand_OutputFormat_WithMultipleBroadcasts_ShouldIncludePrivacyStatusForEach()
+        {
+            // Arrange
+            var broadcasts = new List<LinkDetails>
+            {
+                new LinkDetails { title = "Stream 1", id = "id1", privacyStatus = "public" },
+                new LinkDetails { title = "Stream 2", id = "id2", privacyStatus = "private" },
+                new LinkDetails { title = "Stream 3", id = "id3", privacyStatus = "unlisted" }
+            };
+
+            // Act & Assert
+            foreach (var broadcast in broadcasts)
+            {
+                var output = $"{broadcast.title} ({broadcast.privacyStatus}): {broadcast.broadcastUrl}";
+
+                output.Should().Contain($"({broadcast.privacyStatus})");
+                output.Should().Contain(broadcast.title);
+                output.Should().Contain(broadcast.broadcastUrl);
+            }
+        }
+
+        [Fact]
+        public void ListCommand_OutputFormat_WithParenthesesInTitle_ShouldMatchPattern()
+        {
+            // Arrange
+            var linkDetails = new LinkDetails
+            {
+                title = "My (Special) Broadcast",
+                id = "abc123",
+                privacyStatus = "public"
+            };
+
+            // Act
+            var output = $"{linkDetails.title} ({linkDetails.privacyStatus}): {linkDetails.broadcastUrl}";
+
+            // Assert - Verify pattern matches titles with parentheses
+            output.Should().Be("My (Special) Broadcast (public): https://youtu.be/abc123");
+            output.Should().MatchRegex(@"^.+ \([^)]+\): https://youtu\.be/[^\s]+$");
+            output.Should().StartWith(linkDetails.title);
+            output.Should().Contain($"({linkDetails.privacyStatus})");
+            output.Should().EndWith(linkDetails.broadcastUrl);
+        }
+
+        [Fact]
         public void CreateArgs_WithClearCredentialTrue_ShouldIncludeClearCredentialFlag()
         {
             // Arrange
@@ -201,7 +348,7 @@ namespace YouTubeCLI.Tests.Commands
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json"
             };
-            
+
             SetClearCredential(command, true);
 
             // Act
@@ -222,7 +369,7 @@ namespace YouTubeCLI.Tests.Commands
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json"
             };
-            
+
             SetClearCredential(command, false);
 
             // Act
