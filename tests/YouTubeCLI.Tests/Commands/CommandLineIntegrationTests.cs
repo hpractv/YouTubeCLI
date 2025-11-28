@@ -140,7 +140,7 @@ namespace YouTubeCLI.Tests.Commands
             command.YouTubeUser.Should().Be("test-user");
             command.ClientSecretsFile.Should().Be("secrets.json");
             command.BroadcastFile.Should().Be("broadcasts.json");
-            command.Filter.Should().Be(BroadcastFilter.All);
+            command.Filter.Should().BeEquivalentTo(new[] { BroadcastFilter.All });
         }
 
         [Fact]
@@ -158,7 +158,7 @@ namespace YouTubeCLI.Tests.Commands
             command.YouTubeUser.Should().Be("test-user");
             command.ClientSecretsFile.Should().Be("secrets.json");
             command.BroadcastFile.Should().Be("broadcasts.json");
-            command.Filter.Should().Be(BroadcastFilter.Upcoming);
+            command.Filter.Should().BeEquivalentTo(new[] { BroadcastFilter.Upcoming });
         }
 
         [Fact]
@@ -176,7 +176,7 @@ namespace YouTubeCLI.Tests.Commands
             command.YouTubeUser.Should().Be("test-user");
             command.ClientSecretsFile.Should().Be("secrets.json");
             command.BroadcastFile.Should().Be("broadcasts.json");
-            command.Filter.Should().Be(BroadcastFilter.Upcoming);
+            command.Filter.Should().BeEquivalentTo(new[] { BroadcastFilter.Upcoming });
         }
 
         [Fact]
