@@ -24,8 +24,8 @@ namespace YouTubeCLI.Commands
 
         public Broadcasts broadcasts { get; set; }
 
-        [Option("--filter <value>", "Filter broadcasts by status (All, Upcoming, Active, Completed). Default: All", CommandOptionType.SingleValue)]
-        public BroadcastFilter Filter { get; set; } = BroadcastFilter.All;
+        [Option("--filter <value>", "Filter broadcasts by status (All, Upcoming, Active, Completed). Can specify multiple values. Default: All", CommandOptionType.MultipleValue)]
+        public BroadcastFilter[] Filter { get; set; } = new[] { BroadcastFilter.All };
 
         [Option("-n|--limit <int>", "Limit the number of broadcasts returned. Default: 100", CommandOptionType.SingleValue)]
         public int Limit { get; set; } = 100;
@@ -44,7 +44,9 @@ namespace YouTubeCLI.Commands
                 var _broadcasts = Task.Run<IEnumerable<LinkDetails>>(() => _youTubeLibrary.ListBroadcastUrls(Filter, Limit));
                 _broadcasts.Wait();
 
-                var filterText = Filter == BroadcastFilter.All ? "" : $" {Filter}";
+                var filterText = (Filter.Length == 1 && Filter[0] == BroadcastFilter.All) 
+                    ? "" 
+                    : $" {string.Join(", ", Filter)}";
                 Console.WriteLine($"Getting{filterText} Broadcasts{(Limit != 100 ? $" (limit: {Limit})" : "")}.");
                 foreach (var _broadcast in _broadcasts.Result)
                 {
@@ -70,10 +72,13 @@ namespace YouTubeCLI.Commands
                 _args.Add(ClientSecretsFile);
             }
 
-            if (Filter != BroadcastFilter.All)
+            if (Filter.Length > 0 && !(Filter.Length == 1 && Filter[0] == BroadcastFilter.All))
             {
-                _args.Add("filter");
-                _args.Add(Filter.ToString());
+                foreach (var filter in Filter)
+                {
+                    _args.Add("filter");
+                    _args.Add(filter.ToString());
+                }
             }
 
             if (Limit != 100)

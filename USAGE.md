@@ -163,12 +163,10 @@ Lists existing YouTube broadcasts.
 - `-f, --file <path>`: Path to broadcast configuration JSON file
 
 **Optional Options**:
-- `--upcoming`: Filter to show only upcoming broadcasts
-- `--active`: Filter to show only active broadcasts
-- `--completed`: Filter to show only completed broadcasts
+- `--filter <value>`: Filter broadcasts by status. Options: `All` (default), `Upcoming`, `Active`, `Completed`. Can specify multiple values (e.g., `--filter Upcoming Active` or `--filter Upcoming --filter Active`).
 - `-n, --limit <int>`: Limit the number of broadcasts returned. Default: 100. Results are sorted by most recent first (ScheduledStartTime descending).
 
-**Note**: If no filter flag is specified, all broadcasts will be listed (default behavior).
+**Note**: If no filter is specified, all broadcasts will be listed (default behavior). When multiple filters are specified, broadcasts matching any of the filters will be included.
 
 **Output Format**:
 
@@ -185,13 +183,19 @@ Broadcast Title (privacyStatus): broadcastUrl
 ./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json"
 
 # List only upcoming broadcasts
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --upcoming
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter Upcoming
 
 # List completed broadcasts with custom limit
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --completed -n 50
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter Completed -n 50
 
 # List active broadcasts
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --active
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter Active
+
+# List both upcoming and active broadcasts
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter Upcoming Active
+
+# Alternative syntax for multiple filters
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter Upcoming --filter Active
 ```
 
 ### Update Command

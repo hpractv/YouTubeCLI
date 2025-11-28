@@ -319,6 +319,37 @@ namespace YouTubeCLI.Libraries
             return linkDetails;
         }
 
+        public async Task<IEnumerable<LinkDetails>> ListBroadcastUrls(IEnumerable<BroadcastFilter> filters, int limit = 100)
+        {
+            if (filters == null || !filters.Any())
+            {
+                filters = new[] { BroadcastFilter.All };
+            }
+
+            // If All is specified, just use that
+            if (filters.Contains(BroadcastFilter.All))
+            {
+                return await ListBroadcastUrls(BroadcastFilter.All, limit);
+            }
+
+            // Fetch broadcasts for each filter and combine
+            var allBroadcasts = new List<LinkDetails>();
+            foreach (var filter in filters.Distinct())
+            {
+                var broadcasts = await ListBroadcastUrls(filter, limit);
+                allBroadcasts.AddRange(broadcasts);
+            }
+
+            // Remove duplicates and apply limit
+            var linkDetails = allBroadcasts
+                .GroupBy(b => b.id)
+                .Select(g => g.First())
+                .OrderByDescending(b => b.title)
+                .Take(limit);
+
+            return linkDetails;
+        }
+
         public async Task<IEnumerable<LinkDetails>> ListUpcomingBroadcastUrls()
             => await ListBroadcastUrls(BroadcastFilter.Upcoming);
     }
