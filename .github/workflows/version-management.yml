@@ -3,21 +3,6 @@ name: Version Management
 on:
   workflow_dispatch:
     inputs:
-      version_type:
-        description: 'Version update type'
-        required: true
-        default: 'patch'
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
-          - prerelease
-      prerelease_label:
-        description: 'Prerelease label (only for prerelease type)'
-        required: false
-        default: 'beta'
-        type: string
       create_pr:
         description: 'Create a pull request with the version update'
         required: false
@@ -37,6 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # Fetch all history and tags for git-version-lite
 
       - name: Get Current Version
         id: current-version
@@ -46,66 +32,19 @@ jobs:
           echo "Current version: $VERSION"
 
       - name: Calculate New Version
-        id: new-version
-        run: |
-          CURRENT_VERSION="${{ steps.current-version.outputs.current_version }}"
-          VERSION_TYPE="${{ github.event.inputs.version_type }}"
-          PRERELEASE_LABEL="${{ github.event.inputs.prerelease_label }}"
+        id: git-version
+        uses: im-open/git-version-lite@v1
+        with:
 
-          # Parse current version
-          VERSION_PARTS=(${CURRENT_VERSION//./ })
-          MAJOR=${VERSION_PARTS[0]}
-          MINOR=${VERSION_PARTS[1]}
-          PATCH=${VERSION_PARTS[2]%%-*}
-
-          # Calculate new version based on type
-          case $VERSION_TYPE in
-            "major")
-              NEW_MAJOR=$((MAJOR + 1))
-              NEW_MINOR=0
-              NEW_PATCH=0
-              NEW_VERSION="$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
-              ;;
-            "minor")
-              NEW_MAJOR=$MAJOR
-              NEW_MINOR=$((MINOR + 1))
-              NEW_PATCH=0
-              NEW_VERSION="$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
-              ;;
-            "patch")
-              NEW_MAJOR=$MAJOR
-              NEW_MINOR=$MINOR
-              NEW_PATCH=$((PATCH + 1))
-              NEW_VERSION="$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH"
-              ;;
-            "prerelease")
-              NEW_MAJOR=$MAJOR
-              NEW_MINOR=$MINOR
-              NEW_PATCH=$PATCH
-              # Check if already a prerelease
-              if [[ $CURRENT_VERSION == *"-"* ]]; then
-                # Extract prerelease part and increment
-                PRERELEASE_PART=${CURRENT_VERSION#*-}
-                PRERELEASE_NUM=${PRERELEASE_PART##*.}
-                if [[ $PRERELEASE_NUM =~ ^[0-9]+$ ]]; then
-                  NEW_PRERELEASE_NUM=$((PRERELEASE_NUM + 1))
-                  NEW_VERSION="$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH-$PRERELEASE_LABEL.$NEW_PRERELEASE_NUM"
-                else
-                  NEW_VERSION="$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH-$PRERELEASE_LABEL.1"
-                fi
-              else
-                NEW_VERSION="$NEW_MAJOR.$NEW_MINOR.$NEW_PATCH-$PRERELEASE_LABEL.1"
-              fi
-              ;;
-          esac
-
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
-          echo "New version: $NEW_VERSION"
+          bump-major-pattern: '(?i)^(BREAKING CHANGE|!|major):'
+          bump-minor-pattern: '(?i)^(feat|feature|minor):'
+          bump-patch-pattern: '(?i)^(fix|patch):'
+          version-output: 'new_version'
+          version-type-output: 'version_type'
 
       - name: Update Project File
         run: |
-          NEW_VERSION="${{ steps.new-version.outputs.new_version }}"
+          NEW_VERSION="${{ steps.git-version.outputs.new_version }}"
 
           # Update the project file
           sed -i "s/<Version>[^<]*<\/Version>/<Version>$NEW_VERSION<\/Version>/" ${{ env.PROJECT_PATH }}
@@ -120,26 +59,28 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: bump version to ${{ steps.new-version.outputs.new_version }}'
-          title: 'chore: bump version to ${{ steps.new-version.outputs.new_version }}'
+          commit-message: 'chore: bump version to ${{ steps.git-version.outputs.new_version }}'
+          title: 'chore: bump version to ${{ steps.git-version.outputs.new_version }}'
           body: |
             ## Version Update
 
-            **Version Type**: ${{ steps.new-version.outputs.version_type }}
+            **Version Type**: ${{ steps.git-version.outputs.version_type }}
             **Previous Version**: ${{ steps.current-version.outputs.current_version }}
-            **New Version**: ${{ steps.new-version.outputs.new_version }}
+            **New Version**: ${{ steps.git-version.outputs.new_version }}
+
+            This version was automatically calculated by `im-open/git-version-lite` based on conventional commit messages since the last tag.
 
             ### Changes Made
             - Updated `Version` property in `src/YouTubeCLI.csproj`
-            - Updated `AssemblyVersion` to `${{ steps.new-version.outputs.new_version }}.0`
-            - Updated `FileVersion` to `${{ steps.new-version.outputs.new_version }}.0`
-            - Updated `InformationalVersion` to `${{ steps.new-version.outputs.new_version }}`
+            - Updated `AssemblyVersion` to `${{ steps.git-version.outputs.new_version }}.0`
+            - Updated `FileVersion` to `${{ steps.git-version.outputs.new_version }}.0`
+            - Updated `InformationalVersion` to `${{ steps.git-version.outputs.new_version }}`
 
             ### Next Steps
             1. Review the changes
             2. Merge the pull request
-            3. Create a release with tag `v${{ steps.new-version.outputs.new_version }}`
-          branch: version-bump-${{ steps.new-version.outputs.new_version }}
+            3. Create a release with tag `v${{ steps.git-version.outputs.new_version }}`
+          branch: version-bump-${{ steps.git-version.outputs.new_version }}
           delete-branch: true
 
       - name: Commit Changes (Direct)
@@ -148,15 +89,15 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add ${{ env.PROJECT_PATH }}
-          git commit -m "chore: bump version to ${{ steps.new-version.outputs.new_version }}"
+          git commit -m "chore: bump version to ${{ steps.git-version.outputs.new_version }}"
           git push
 
       - name: Output Summary
         run: |
           echo "## Version Update Summary"
           echo "**Previous Version**: ${{ steps.current-version.outputs.current_version }}"
-          echo "**New Version**: ${{ steps.new-version.outputs.new_version }}"
-          echo "**Version Type**: ${{ steps.new-version.outputs.version_type }}"
+          echo "**New Version**: ${{ steps.git-version.outputs.new_version }}"
+          echo "**Version Type**: ${{ steps.git-version.outputs.version_type }}"
           if [[ "${{ github.event.inputs.create_pr }}" == "true" ]]; then
             echo "**Action**: Pull request created"
           else

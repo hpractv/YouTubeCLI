@@ -104,12 +104,12 @@ Download the latest release from the [GitHub Releases](https://github.com/hpract
 
 ## Commands Overview
 
-| Command  | Description               | Key Options                  |
-| -------- | ------------------------- | ---------------------------- |
-| `create` | Create YouTube broadcasts | `-f`, `-c`, `-u`, `-t`       |
-| `list`   | List existing broadcasts  | `-f`, `-c`, `-u`, `-p`       |
-| `update` | Update broadcast settings | `-y`, `-f`, `-a`, `-o`, `-p` |
-| `end`    | End active broadcasts     | `-i`                         |
+| Command  | Description               | Key Options                           |
+| -------- | ------------------------- | ------------------------------------- |
+| `create` | Create YouTube broadcasts | `-f`, `-c`, `-u`, `-t`                |
+| `list`   | List existing broadcasts  | `-f`, `-c`, `-u`, `--upcoming`, `-n`  |
+| `update` | Update broadcast settings | `-y`, `-f`, `-a`, `-o`, `-p`          |
+| `end`    | End active broadcasts     | `-i`                                  |
 
 ## Command Details
 
@@ -163,7 +163,10 @@ Lists existing YouTube broadcasts.
 - `-f, --file <path>`: Path to broadcast configuration JSON file
 
 **Optional Options**:
-- `-p, --upcoming`: List only upcoming broadcasts
+- `--filter <value>`: Filter broadcasts by status. Options: `all` (default), `upcoming`, `active`, `completed`. Accepts comma-separated values (e.g., `--filter upcoming,active`).
+- `-n, --limit <int>`: Limit the number of broadcasts returned. Default: 100. Results are sorted by most recent first (ScheduledStartTime descending).
+
+**Note**: If no filter is specified, all broadcasts will be listed (default behavior). When multiple filters are specified (comma-separated), broadcasts matching any of the filters will be included.
 
 **Output Format**:
 
@@ -172,15 +175,27 @@ Each broadcast entry displays the following information:
 Broadcast Title (privacyStatus): broadcastUrl
 ```
 
-**Note**: The privacy status (e.g., `public`, `private`, `unlisted`) is displayed in parentheses after the broadcast title, followed by the broadcast URL. This allows you to quickly identify the privacy setting for each broadcast.
+**Note**: The privacy status (e.g., `public`, `private`, `unlisted`) is displayed in parentheses after the broadcast title, followed by the broadcast URL. This allows you to quickly identify the privacy setting for each broadcast. Results are sorted by most recent first (ScheduledStartTime descending).
 
 **Examples**:
 ```bash
-# List all broadcasts
+# List all broadcasts (default, limit 100)
 ./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json"
 
 # List only upcoming broadcasts
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -p
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter upcoming
+
+# List completed broadcasts with custom limit
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter completed -n 50
+
+# List active broadcasts
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter active
+
+# List both upcoming and active broadcasts (comma-separated)
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter upcoming,active
+
+# List all three statuses
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter upcoming,active,completed
 ```
 
 ### Update Command

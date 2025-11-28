@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using YouTubeCLI.Libraries;
 using YouTubeCLI.Models;
@@ -24,8 +25,27 @@ namespace YouTubeCLI.Commands
 
         public Broadcasts broadcasts { get; set; }
 
-        [Option("-p|--upcoming", "List only upcoming broadcasts", CommandOptionType.NoValue)]
-        public bool Upcoming { get; set; }
+        [Option("--filter <value>", "Filter broadcasts by status (all, upcoming, active, completed). Accepts comma-separated values (e.g., 'upcoming,active'). Default: all", CommandOptionType.SingleValue)]
+        public string FilterString { get; set; } = "all";
+
+        public BroadcastFilter[] Filter
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(FilterString))
+                    return new[] { BroadcastFilter.All };
+
+                var filters = FilterString.Split(',')
+                    .Select(f => BroadcastFilterExtensions.FromString(f.Trim()))
+                    .Distinct()
+                    .ToArray();
+
+                return filters.Length > 0 ? filters : new[] { BroadcastFilter.All };
+            }
+        }
+
+        [Option("-n|--limit <int>", "Limit the number of broadcasts returned. Default: 100", CommandOptionType.SingleValue)]
+        public int Limit { get; set; } = 100;
 
         private YouTubeCLI Parent { get; set; }
 
@@ -38,10 +58,13 @@ namespace YouTubeCLI.Commands
 
                 var _youTubeLibrary = new YouTubeLibrary(YouTubeUser, ClientSecretsFile);
                 ClearCredentialsIfRequested(_youTubeLibrary);
-                var _broadcasts = Task.Run<IEnumerable<LinkDetails>>(() => _youTubeLibrary.ListBroadcastUrls(Upcoming));
+                var _broadcasts = Task.Run<IEnumerable<LinkDetails>>(() => _youTubeLibrary.ListBroadcastUrls(Filter, Limit));
                 _broadcasts.Wait();
 
-                Console.WriteLine($"Getting{(Upcoming ? " Upcoming" : "")} Broadcasts.");
+                var filterText = (Filter.Length == 1 && Filter[0] == BroadcastFilter.All) 
+                    ? "" 
+                    : $" {string.Join(", ", Filter)}";
+                Console.WriteLine($"Getting{filterText} Broadcasts{(Limit != 100 ? $" (limit: {Limit})" : "")}.");
                 foreach (var _broadcast in _broadcasts.Result)
                 {
                     Console.WriteLine($"{_broadcast.title} ({_broadcast.privacyStatus}): {_broadcast.broadcastUrl}");
@@ -66,9 +89,16 @@ namespace YouTubeCLI.Commands
                 _args.Add(ClientSecretsFile);
             }
 
-            if (Upcoming)
+            if (!string.IsNullOrWhiteSpace(FilterString) && !FilterString.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
-                _args.Add("upcoming");
+                _args.Add("filter");
+                _args.Add(FilterString);
+            }
+
+            if (Limit != 100)
+            {
+                _args.Add("limit");
+                _args.Add(Limit.ToString());
             }
             return _args;
         }
