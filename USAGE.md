@@ -163,7 +163,7 @@ Lists existing YouTube broadcasts.
 - `-f, --file <path>`: Path to broadcast configuration JSON file
 
 **Optional Options**:
-- `-f, --filter <value>`: Filter broadcasts by status. Options: `all` (default), `upcoming`, `active`, `completed`
+- `-s, --filter <value>`: Filter broadcasts by status. Options: `all` (default), `upcoming`, `active`, `completed`
 - `-n, --limit <int>`: Limit the number of broadcasts returned. Default: 100. Results are sorted by most recent first (ScheduledStartTime descending).
 
 **Output Format**:
@@ -181,13 +181,13 @@ Broadcast Title (privacyStatus): broadcastUrl
 ./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json"
 
 # List only upcoming broadcasts
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter upcoming
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -s upcoming
 
 # List completed broadcasts with custom limit
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter completed --limit 50
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -s completed -n 50
 
 # List active broadcasts
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --filter active
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -s active
 ```
 
 ### Update Command

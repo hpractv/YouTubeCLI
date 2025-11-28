@@ -24,7 +24,7 @@ namespace YouTubeCLI.Commands
 
         public Broadcasts broadcasts { get; set; }
 
-        [Option("-f|--filter <value>", "Filter broadcasts by status (all, upcoming, active, completed). Default: all", CommandOptionType.SingleValue)]
+        [Option("-s|--filter <value>", "Filter broadcasts by status (all, upcoming, active, completed). Default: all", CommandOptionType.SingleValue)]
         public string FilterString { get; set; } = "all";
 
         public BroadcastFilter Filter => BroadcastFilterExtensions.FromString(FilterString);
