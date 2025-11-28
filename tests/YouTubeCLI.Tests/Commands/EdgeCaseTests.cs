@@ -217,7 +217,7 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Upcoming = false
+                FilterString = "all"
             };
 
             // Act

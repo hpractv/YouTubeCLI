@@ -133,32 +133,32 @@ namespace YouTubeCLI.Tests.Commands
             command.YouTubeUser = "test-user";
             command.ClientSecretsFile = "secrets.json";
             command.BroadcastFile = "broadcasts.json";
-            command.Upcoming = false;
+            command.FilterString = "all";
 
             // Act & Assert
             command.Should().NotBeNull();
             command.YouTubeUser.Should().Be("test-user");
             command.ClientSecretsFile.Should().Be("secrets.json");
             command.BroadcastFile.Should().Be("broadcasts.json");
-            command.Upcoming.Should().BeFalse();
+            command.Filter.Should().Be(BroadcastFilter.All);
         }
 
         [Fact]
-        public void ListCommand_WithUpcomingFlag_ShouldParseCorrectly()
+        public void ListCommand_WithFilterFlag_ShouldParseCorrectly()
         {
             // Arrange
             var command = new ListCommand();
             command.YouTubeUser = "test-user";
             command.ClientSecretsFile = "secrets.json";
             command.BroadcastFile = "broadcasts.json";
-            command.Upcoming = true;
+            command.FilterString = "upcoming";
 
             // Act & Assert
             command.Should().NotBeNull();
             command.YouTubeUser.Should().Be("test-user");
             command.ClientSecretsFile.Should().Be("secrets.json");
             command.BroadcastFile.Should().Be("broadcasts.json");
-            command.Upcoming.Should().BeTrue();
+            command.Filter.Should().Be(BroadcastFilter.Upcoming);
         }
 
         [Fact]
@@ -169,14 +169,14 @@ namespace YouTubeCLI.Tests.Commands
             command.YouTubeUser = "test-user";
             command.ClientSecretsFile = "secrets.json";
             command.BroadcastFile = "broadcasts.json";
-            command.Upcoming = true;
+            command.FilterString = "upcoming";
 
             // Act & Assert
             command.Should().NotBeNull();
             command.YouTubeUser.Should().Be("test-user");
             command.ClientSecretsFile.Should().Be("secrets.json");
             command.BroadcastFile.Should().Be("broadcasts.json");
-            command.Upcoming.Should().BeTrue();
+            command.Filter.Should().Be(BroadcastFilter.Upcoming);
         }
 
         [Fact]

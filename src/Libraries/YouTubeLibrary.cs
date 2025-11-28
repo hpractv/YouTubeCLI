@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 using YouTubeCLI.Models;
 using YouTubeCLI.Utilities;
+using YouTubeCLI.Commands;
 
 namespace YouTubeCLI.Libraries
 {
@@ -268,27 +269,57 @@ namespace YouTubeCLI.Libraries
             return _broadcast.Snippet;
         }
 
-        public async Task<IEnumerable<LiveBroadcast>> ListBroadcasts(string parts = _broadcastPart)
+        public async Task<IEnumerable<LiveBroadcast>> ListBroadcasts(string parts = _broadcastPart, string broadcastStatus = "all")
         {
             var _listRequest = service.LiveBroadcasts.List(_broadcastPart);
             _listRequest.Mine = true;
+            _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.All;
+
+            // Map string to enum
+            if (broadcastStatus != null)
+            {
+                switch (broadcastStatus.ToLowerInvariant())
+                {
+                    case "all":
+                        _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.All;
+                        break;
+                    case "upcoming":
+                        _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Upcoming;
+                        break;
+                    case "active":
+                        _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Active;
+                        break;
+                    case "completed":
+                        _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Completed;
+                        break;
+                }
+            }
+
             var _broadcasts = await _listRequest.ExecuteAsync();
 
             return _broadcasts.Items;
         }
 
-        public async Task<IEnumerable<LinkDetails>> ListBroadcastUrls(bool upcoming = false)
-           => (await ListBroadcasts("id,snippet,status"))
-                .Where(b => !upcoming ||
-                    (upcoming && b.Snippet.ScheduledStartTime > DateTime.Now))
+        public async Task<IEnumerable<LinkDetails>> ListBroadcastUrls(BroadcastFilter filter = BroadcastFilter.All, int limit = 100)
+        {
+            var broadcastStatus = filter.ToApiString();
+            var broadcasts = await ListBroadcasts("id,snippet,status", broadcastStatus);
+
+            var linkDetails = broadcasts
+                .OrderByDescending(b => b.Snippet?.ScheduledStartTime ?? DateTime.MinValue)
+                .ThenBy(b => b.Snippet?.ScheduledStartTime == null ? 0 : 1) // Put nulls last
+                .Take(limit)
                 .Select(b => new LinkDetails
                 {
                     id = b.Id,
-                    title = b.Snippet.Title,
+                    title = b.Snippet?.Title ?? "Unknown",
                     privacyStatus = b.Status?.PrivacyStatus ?? "unknown",
                 });
 
+            return linkDetails;
+        }
+
         public async Task<IEnumerable<LinkDetails>> ListUpcomingBroadcastUrls()
-            => await ListBroadcastUrls(true);
+            => await ListBroadcastUrls(BroadcastFilter.Upcoming);
     }
 }

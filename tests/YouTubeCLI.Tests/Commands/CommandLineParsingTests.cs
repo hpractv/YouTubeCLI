@@ -188,12 +188,15 @@ namespace YouTubeCLI.Tests.Commands
             var commandType = typeof(ListCommand);
 
             // Act & Assert
-            var upcomingProperty = commandType.GetProperty(nameof(ListCommand.Upcoming));
+            var filterProperty = commandType.GetProperty(nameof(ListCommand.FilterString));
+            var limitProperty = commandType.GetProperty(nameof(ListCommand.Limit));
 
-            upcomingProperty.Should().NotBeNull();
+            filterProperty.Should().NotBeNull();
+            limitProperty.Should().NotBeNull();
 
-            // This should not have Required attribute
-            upcomingProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            // These should not have Required attribute
+            filterProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
+            limitProperty!.GetCustomAttribute<System.ComponentModel.DataAnnotations.RequiredAttribute>().Should().BeNull();
         }
     }
 }

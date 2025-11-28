@@ -48,7 +48,7 @@ namespace YouTubeCLI.Tests.Commands
         }
 
         [Fact]
-        public void CreateArgs_WithUpcomingTrue_ShouldIncludeUpcomingFlag()
+        public void CreateArgs_WithFilterUpcoming_ShouldIncludeFilterFlag()
         {
             // Arrange
             var command = new ListCommand
@@ -56,18 +56,19 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Upcoming = true
+                FilterString = "upcoming"
             };
 
             // Act
             var args = command.CreateArgs();
 
             // Assert
+            args.Should().Contain("filter");
             args.Should().Contain("upcoming");
         }
 
         [Fact]
-        public void CreateArgs_WithUpcomingFalse_ShouldNotIncludeUpcomingFlag()
+        public void CreateArgs_WithFilterAll_ShouldNotIncludeFilterFlag()
         {
             // Arrange
             var command = new ListCommand
@@ -75,14 +76,14 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Upcoming = false
+                FilterString = "all"
             };
 
             // Act
             var args = command.CreateArgs();
 
             // Assert
-            args.Should().NotContain("upcoming");
+            args.Should().NotContain("filter");
         }
 
         [Fact]
@@ -130,7 +131,8 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Upcoming = true
+                FilterString = "upcoming",
+                Limit = 50
             };
 
             // Act
@@ -139,7 +141,10 @@ namespace YouTubeCLI.Tests.Commands
             // Assert
             args.Should().Contain("client-secrets");
             args.Should().Contain("secrets.json");
+            args.Should().Contain("filter");
             args.Should().Contain("upcoming");
+            args.Should().Contain("limit");
+            args.Should().Contain("50");
         }
 
         [Fact]
@@ -151,24 +156,37 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "user123",
                 ClientSecretsFile = "my-secrets.json",
                 BroadcastFile = "my-broadcasts.json",
-                Upcoming = true
+                FilterString = "upcoming",
+                Limit = 50
             };
 
             // Assert
             command.YouTubeUser.Should().Be("user123");
             command.ClientSecretsFile.Should().Be("my-secrets.json");
             command.BroadcastFile.Should().Be("my-broadcasts.json");
-            command.Upcoming.Should().BeTrue();
+            command.Filter.Should().Be(BroadcastFilter.Upcoming);
+            command.Limit.Should().Be(50);
         }
 
         [Fact]
-        public void ListCommand_Upcoming_ShouldDefaultToFalse()
+        public void ListCommand_Filter_ShouldDefaultToAll()
         {
             // Arrange & Act
             var command = new ListCommand();
 
             // Assert
-            command.Upcoming.Should().BeFalse();
+            command.Filter.Should().Be(BroadcastFilter.All);
+            command.FilterString.Should().Be("all");
+        }
+
+        [Fact]
+        public void ListCommand_Limit_ShouldDefaultTo100()
+        {
+            // Arrange & Act
+            var command = new ListCommand();
+
+            // Assert
+            command.Limit.Should().Be(100);
         }
 
         [Theory]
@@ -389,6 +407,152 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             value.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("all", BroadcastFilter.All)]
+        [InlineData("upcoming", BroadcastFilter.Upcoming)]
+        [InlineData("active", BroadcastFilter.Active)]
+        [InlineData("completed", BroadcastFilter.Completed)]
+        [InlineData("ALL", BroadcastFilter.All)]
+        [InlineData("Upcoming", BroadcastFilter.Upcoming)]
+        [InlineData("  active  ", BroadcastFilter.Active)]
+        public void ListCommand_Filter_ShouldParseCorrectly(string filterString, BroadcastFilter expectedFilter)
+        {
+            // Arrange & Act
+            var command = new ListCommand
+            {
+                FilterString = filterString
+            };
+
+            // Assert
+            command.Filter.Should().Be(expectedFilter);
+        }
+
+        [Fact]
+        public void CreateArgs_WithFilterActive_ShouldIncludeFilterFlag()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json",
+                FilterString = "active"
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("filter");
+            args.Should().Contain("active");
+        }
+
+        [Fact]
+        public void CreateArgs_WithFilterCompleted_ShouldIncludeFilterFlag()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json",
+                FilterString = "completed"
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("filter");
+            args.Should().Contain("completed");
+        }
+
+        [Fact]
+        public void CreateArgs_WithLimitDefault_ShouldNotIncludeLimitFlag()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json",
+                Limit = 100
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().NotContain("limit");
+        }
+
+        [Fact]
+        public void CreateArgs_WithLimitCustom_ShouldIncludeLimitFlag()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json",
+                Limit = 50
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("limit");
+            args.Should().Contain("50");
+        }
+
+        [Theory]
+        [InlineData(10)]
+        [InlineData(25)]
+        [InlineData(200)]
+        [InlineData(1000)]
+        public void CreateArgs_WithDifferentLimits_ShouldIncludeCorrectLimit(int limit)
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json",
+                Limit = limit
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("limit");
+            args.Should().Contain(limit.ToString());
+        }
+
+        [Fact]
+        public void CreateArgs_WithFilterAndLimit_ShouldIncludeBoth()
+        {
+            // Arrange
+            var command = new ListCommand
+            {
+                YouTubeUser = "test-user",
+                ClientSecretsFile = "secrets.json",
+                BroadcastFile = "broadcasts.json",
+                FilterString = "completed",
+                Limit = 25
+            };
+
+            // Act
+            var args = command.CreateArgs();
+
+            // Assert
+            args.Should().Contain("filter");
+            args.Should().Contain("completed");
+            args.Should().Contain("limit");
+            args.Should().Contain("25");
         }
     }
 }
