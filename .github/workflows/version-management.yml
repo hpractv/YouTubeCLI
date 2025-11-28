@@ -35,7 +35,7 @@ jobs:
         id: git-version
         uses: im-open/git-version-lite@v1
         with:
-          version-from: '2.0.0' # Starting version
+
           bump-major-pattern: '(?i)^(BREAKING CHANGE|!|major):'
           bump-minor-pattern: '(?i)^(feat|feature|minor):'
           bump-patch-pattern: '(?i)^(fix|patch):'

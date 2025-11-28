@@ -276,23 +276,20 @@ namespace YouTubeCLI.Libraries
             _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.All;
 
             // Map string to enum
-            if (broadcastStatus != null)
+            switch (broadcastStatus.ToLowerInvariant())
             {
-                switch (broadcastStatus.ToLowerInvariant())
-                {
-                    case "all":
-                        _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.All;
-                        break;
-                    case "upcoming":
-                        _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Upcoming;
-                        break;
-                    case "active":
-                        _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Active;
-                        break;
-                    case "completed":
-                        _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Completed;
-                        break;
-                }
+                case "all":
+                    _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.All;
+                    break;
+                case "upcoming":
+                    _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Upcoming;
+                    break;
+                case "active":
+                    _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Active;
+                    break;
+                case "completed":
+                    _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Completed;
+                    break;
             }
 
             var _broadcasts = await _listRequest.ExecuteAsync();
@@ -307,7 +304,7 @@ namespace YouTubeCLI.Libraries
 
             var linkDetails = broadcasts
                 .OrderByDescending(b => b.Snippet?.ScheduledStartTime ?? DateTime.MinValue)
-                .ThenBy(b => b.Snippet?.ScheduledStartTime == null ? 0 : 1) // Put nulls last
+                .ThenBy(b => b.Snippet?.ScheduledStartTime == null ? 1 : 0) // Put nulls last
                 .Take(limit)
                 .Select(b => new LinkDetails
                 {
