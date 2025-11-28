@@ -56,7 +56,7 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Filter = new[] { BroadcastFilter.Upcoming }
+                FilterString = "upcoming"
             };
 
             // Act
@@ -64,7 +64,7 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             args.Should().Contain("filter");
-            args.Should().Contain("Upcoming");
+            args.Should().Contain("upcoming");
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Filter = new[] { BroadcastFilter.All }
+                FilterString = "all"
             };
 
             // Act
@@ -131,7 +131,7 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Filter = new[] { BroadcastFilter.Upcoming },
+                FilterString = "upcoming",
                 Limit = 50
             };
 
@@ -142,7 +142,7 @@ namespace YouTubeCLI.Tests.Commands
             args.Should().Contain("client-secrets");
             args.Should().Contain("secrets.json");
             args.Should().Contain("filter");
-            args.Should().Contain("Upcoming");
+            args.Should().Contain("upcoming");
             args.Should().Contain("limit");
             args.Should().Contain("50");
         }
@@ -156,7 +156,7 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "user123",
                 ClientSecretsFile = "my-secrets.json",
                 BroadcastFile = "my-broadcasts.json",
-                Filter = new[] { BroadcastFilter.Upcoming },
+                FilterString = "upcoming",
                 Limit = 50
             };
 
@@ -164,6 +164,7 @@ namespace YouTubeCLI.Tests.Commands
             command.YouTubeUser.Should().Be("user123");
             command.ClientSecretsFile.Should().Be("my-secrets.json");
             command.BroadcastFile.Should().Be("my-broadcasts.json");
+            command.FilterString.Should().Be("upcoming");
             command.Filter.Should().ContainSingle();
             command.Filter[0].Should().Be(BroadcastFilter.Upcoming);
             command.Limit.Should().Be(50);
@@ -176,6 +177,7 @@ namespace YouTubeCLI.Tests.Commands
             var command = new ListCommand();
 
             // Assert
+            command.FilterString.Should().Be("all");
             command.Filter.Should().ContainSingle();
             command.Filter[0].Should().Be(BroadcastFilter.All);
         }
@@ -411,12 +413,12 @@ namespace YouTubeCLI.Tests.Commands
         }
 
         [Fact]
-        public void ListCommand_Filter_ShouldAcceptMultipleValues()
+        public void ListCommand_Filter_ShouldAcceptMultipleCommaSeparatedValues()
         {
             // Arrange & Act
             var command = new ListCommand
             {
-                Filter = new[] { BroadcastFilter.Upcoming, BroadcastFilter.Active }
+                FilterString = "upcoming,active"
             };
 
             // Assert
@@ -434,7 +436,7 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Filter = new[] { BroadcastFilter.Active }
+                FilterString = "active"
             };
 
             // Act
@@ -442,7 +444,7 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             args.Should().Contain("filter");
-            args.Should().Contain("Active");
+            args.Should().Contain("active");
         }
 
         [Fact]
@@ -454,7 +456,7 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Filter = new[] { BroadcastFilter.Completed }
+                FilterString = "completed"
             };
 
             // Act
@@ -462,7 +464,7 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             args.Should().Contain("filter");
-            args.Should().Contain("Completed");
+            args.Should().Contain("completed");
         }
 
         [Fact]
@@ -537,7 +539,7 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Filter = new[] { BroadcastFilter.Completed },
+                FilterString = "completed",
                 Limit = 25
             };
 
@@ -546,13 +548,13 @@ namespace YouTubeCLI.Tests.Commands
 
             // Assert
             args.Should().Contain("filter");
-            args.Should().Contain("Completed");
+            args.Should().Contain("completed");
             args.Should().Contain("limit");
             args.Should().Contain("25");
         }
 
         [Fact]
-        public void CreateArgs_WithMultipleFilters_ShouldIncludeAllFilters()
+        public void CreateArgs_WithMultipleCommaSeparatedFilters_ShouldIncludeFilterString()
         {
             // Arrange
             var command = new ListCommand
@@ -560,19 +562,33 @@ namespace YouTubeCLI.Tests.Commands
                 YouTubeUser = "test-user",
                 ClientSecretsFile = "secrets.json",
                 BroadcastFile = "broadcasts.json",
-                Filter = new[] { BroadcastFilter.Upcoming, BroadcastFilter.Active }
+                FilterString = "upcoming,active"
             };
 
             // Act
             var args = command.CreateArgs();
 
             // Assert
-            var filterIndices = args.Select((arg, index) => arg == "filter" ? index : -1)
-                .Where(index => index >= 0)
-                .ToList();
-            filterIndices.Should().HaveCount(2);
-            args.Should().Contain("Upcoming");
-            args.Should().Contain("Active");
+            args.Should().Contain("filter");
+            args.Should().Contain("upcoming,active");
+        }
+
+        [Theory]
+        [InlineData("upcoming,active,completed")]
+        [InlineData("active")]
+        [InlineData("upcoming, active")]
+        [InlineData("  upcoming  ,  active  ")]
+        public void ListCommand_Filter_ShouldParseCommaSeparatedValues(string filterString)
+        {
+            // Arrange & Act
+            var command = new ListCommand
+            {
+                FilterString = filterString
+            };
+
+            // Assert
+            command.Filter.Should().NotBeEmpty();
+            command.Filter.Should().OnlyContain(f => f != BroadcastFilter.All || filterString.Contains("all", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

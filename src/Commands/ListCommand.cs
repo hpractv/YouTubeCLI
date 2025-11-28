@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using YouTubeCLI.Libraries;
 using YouTubeCLI.Models;
@@ -24,8 +25,24 @@ namespace YouTubeCLI.Commands
 
         public Broadcasts broadcasts { get; set; }
 
-        [Option("--filter <value>", "Filter broadcasts by status (All, Upcoming, Active, Completed). Can specify multiple values. Default: All", CommandOptionType.MultipleValue)]
-        public BroadcastFilter[] Filter { get; set; } = new[] { BroadcastFilter.All };
+        [Option("--filter <value>", "Filter broadcasts by status (all, upcoming, active, completed). Accepts comma-separated values (e.g., 'upcoming,active'). Default: all", CommandOptionType.SingleValue)]
+        public string FilterString { get; set; } = "all";
+
+        public BroadcastFilter[] Filter
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(FilterString))
+                    return new[] { BroadcastFilter.All };
+
+                var filters = FilterString.Split(',')
+                    .Select(f => BroadcastFilterExtensions.FromString(f.Trim()))
+                    .Distinct()
+                    .ToArray();
+
+                return filters.Length > 0 ? filters : new[] { BroadcastFilter.All };
+            }
+        }
 
         [Option("-n|--limit <int>", "Limit the number of broadcasts returned. Default: 100", CommandOptionType.SingleValue)]
         public int Limit { get; set; } = 100;
@@ -72,13 +89,10 @@ namespace YouTubeCLI.Commands
                 _args.Add(ClientSecretsFile);
             }
 
-            if (Filter.Length > 0 && !(Filter.Length == 1 && Filter[0] == BroadcastFilter.All))
+            if (!string.IsNullOrWhiteSpace(FilterString) && !FilterString.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var filter in Filter)
-                {
-                    _args.Add("filter");
-                    _args.Add(filter.ToString());
-                }
+                _args.Add("filter");
+                _args.Add(FilterString);
             }
 
             if (Limit != 100)
