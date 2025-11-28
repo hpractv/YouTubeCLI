@@ -24,25 +24,8 @@ namespace YouTubeCLI.Commands
 
         public Broadcasts broadcasts { get; set; }
 
-        [Option("--upcoming", "Filter to show only upcoming broadcasts", CommandOptionType.NoValue)]
-        public bool Upcoming { get; set; }
-
-        [Option("--active", "Filter to show only active broadcasts", CommandOptionType.NoValue)]
-        public bool Active { get; set; }
-
-        [Option("--completed", "Filter to show only completed broadcasts", CommandOptionType.NoValue)]
-        public bool Completed { get; set; }
-
-        public BroadcastFilter Filter
-        {
-            get
-            {
-                if (Upcoming) return BroadcastFilter.Upcoming;
-                if (Active) return BroadcastFilter.Active;
-                if (Completed) return BroadcastFilter.Completed;
-                return BroadcastFilter.All;
-            }
-        }
+        [Option("--filter <value>", "Filter broadcasts by status (All, Upcoming, Active, Completed). Default: All", CommandOptionType.SingleValue)]
+        public BroadcastFilter Filter { get; set; } = BroadcastFilter.All;
 
         [Option("-n|--limit <int>", "Limit the number of broadcasts returned. Default: 100", CommandOptionType.SingleValue)]
         public int Limit { get; set; } = 100;
@@ -87,17 +70,10 @@ namespace YouTubeCLI.Commands
                 _args.Add(ClientSecretsFile);
             }
 
-            if (Upcoming)
+            if (Filter != BroadcastFilter.All)
             {
-                _args.Add("upcoming");
-            }
-            else if (Active)
-            {
-                _args.Add("active");
-            }
-            else if (Completed)
-            {
-                _args.Add("completed");
+                _args.Add("filter");
+                _args.Add(Filter.ToString());
             }
 
             if (Limit != 100)
