@@ -104,12 +104,12 @@ Download the latest release from the [GitHub Releases](https://github.com/hpract
 
 ## Commands Overview
 
-| Command  | Description               | Key Options                  |
-| -------- | ------------------------- | ---------------------------- |
-| `create` | Create YouTube broadcasts | `-f`, `-c`, `-u`, `-t`       |
-| `list`   | List existing broadcasts  | `-f`, `-c`, `-u`, `-p`       |
-| `update` | Update broadcast settings | `-y`, `-f`, `-a`, `-o`, `-p` |
-| `end`    | End active broadcasts     | `-i`                         |
+| Command  | Description               | Key Options                           |
+| -------- | ------------------------- | ------------------------------------- |
+| `create` | Create YouTube broadcasts | `-f`, `-c`, `-u`, `-t`                |
+| `list`   | List existing broadcasts  | `-f`, `-c`, `-u`, `--upcoming`, `-n`  |
+| `update` | Update broadcast settings | `-y`, `-f`, `-a`, `-o`, `-p`          |
+| `end`    | End active broadcasts     | `-i`                                  |
 
 ## Command Details
 
@@ -163,8 +163,12 @@ Lists existing YouTube broadcasts.
 - `-f, --file <path>`: Path to broadcast configuration JSON file
 
 **Optional Options**:
-- `-s, --filter <value>`: Filter broadcasts by status. Options: `all` (default), `upcoming`, `active`, `completed`
+- `--upcoming`: Filter to show only upcoming broadcasts
+- `--active`: Filter to show only active broadcasts
+- `--completed`: Filter to show only completed broadcasts
 - `-n, --limit <int>`: Limit the number of broadcasts returned. Default: 100. Results are sorted by most recent first (ScheduledStartTime descending).
+
+**Note**: If no filter flag is specified, all broadcasts will be listed (default behavior).
 
 **Output Format**:
 
@@ -181,13 +185,13 @@ Broadcast Title (privacyStatus): broadcastUrl
 ./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json"
 
 # List only upcoming broadcasts
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -s upcoming
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --upcoming
 
 # List completed broadcasts with custom limit
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -s completed -n 50
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --completed -n 50
 
 # List active broadcasts
-./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" -s active
+./ytc list -u "your-youtube-user" -c "client_secrets.json" -f "broadcasts.json" --active
 ```
 
 ### Update Command
