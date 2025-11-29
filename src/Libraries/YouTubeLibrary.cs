@@ -272,14 +272,16 @@ namespace YouTubeCLI.Libraries
         public async Task<IEnumerable<LiveBroadcast>> ListBroadcasts(string parts = _broadcastPart, string broadcastStatus = "all")
         {
             var _listRequest = service.LiveBroadcasts.List(_broadcastPart);
-            _listRequest.Mine = true;
-            _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.All;
-
-            // Map string to enum
+            
+            // Note: According to YouTube API docs, Mine and BroadcastStatus parameters are incompatible
+            // When BroadcastStatus is not "all", we use BroadcastStatus parameter
+            // When BroadcastStatus is "all", we use Mine parameter instead
+            
             switch (broadcastStatus.ToLowerInvariant())
             {
                 case "all":
-                    _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.All;
+                    // Use Mine instead of BroadcastStatus for "all"
+                    _listRequest.Mine = true;
                     break;
                 case "upcoming":
                     _listRequest.BroadcastStatus = Google.Apis.YouTube.v3.LiveBroadcastsResource.ListRequest.BroadcastStatusEnum.Upcoming;
