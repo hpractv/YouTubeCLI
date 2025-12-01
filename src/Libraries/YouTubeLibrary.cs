@@ -121,13 +121,10 @@ namespace YouTubeCLI.Libraries
                 // If the start date is already on the correct day of week, use it
                 return startDate;
             }
-            else
-            {
-                // Otherwise, find the next occurrence of that day of the week
-                var daysToAdd = (7 + targetDayOfWeek - startDayOfWeek) % 7;
-                if (daysToAdd == 0) daysToAdd = 7; // If it's the same day, go to next week
-                return startDate.AddDays(daysToAdd);
-            }
+            
+            // Otherwise, find the next occurrence of that day of the week
+            var daysToAdd = (7 + targetDayOfWeek - startDayOfWeek) % 7;
+            return startDate.AddDays(daysToAdd);
         }
 
         public async Task<IEnumerable<LiveBroadcastInfo>> BuildBroadCast(
