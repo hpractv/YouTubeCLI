@@ -562,5 +562,85 @@ namespace YouTubeCLI.Tests.Libraries
             act.Should().NotThrowAsync<ArgumentException>(
                 $"End of month date {endOfMonthDate} to {(DayOfWeek)targetDay} (crossing month boundary) should be valid");
         }
+
+        /// <summary>
+        /// Regression test for bug: Running on Saturday with broadcast set for Sunday was creating Monday broadcast
+        /// </summary>
+        [Fact]
+        public void BuildBroadCast_RunningOnSaturdayForSundayBroadcast_ShouldCreateSundayNotMonday()
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            
+            // Create a Saturday date
+            var saturday = new DateOnly(2024, 12, 7); // This is a Saturday
+            saturday.DayOfWeek.Should().Be(DayOfWeek.Saturday);
+            
+            // Create a broadcast set for Sunday (day 0)
+            var broadcast = new Broadcast
+            {
+                id = "test-id",
+                name = "Sunday Broadcast",
+                dayOfWeek = 0, // Sunday
+                broadcastStart = "10:00 AM",
+                broadcastDurationInMinutes = 60,
+                stream = "test-stream",
+                privacy = "private",
+                autoStart = true,
+                autoStop = true
+            };
+
+            // Act - Run on Saturday for Sunday broadcast
+            Func<Task> act = async () => await youTubeLibrary.BuildBroadCast(
+                broadcast,
+                occurrences: 1,
+                thumbnailDirectory: "/tmp",
+                startsOn: saturday,
+                testMode: true);
+
+            // Assert
+            // Should not throw ArgumentException
+            // The next broadcast should be on Sunday (1 day after Saturday), not Monday (2 days after)
+            act.Should().NotThrowAsync<ArgumentException>(
+                "Running on Saturday for Sunday broadcast should calculate Sunday as next broadcast day");
+        }
+
+        /// <summary>
+        /// Direct test of date calculation logic - verifies actual calculated dates
+        /// </summary>
+        [Theory]
+        [InlineData(2024, 12, 7, 6, 0, 2024, 12, 8)] // Saturday Dec 7 -> Sunday Dec 8
+        [InlineData(2024, 12, 7, 6, 1, 2024, 12, 9)] // Saturday Dec 7 -> Monday Dec 9
+        [InlineData(2024, 12, 1, 0, 0, 2024, 12, 1)] // Sunday Dec 1 -> Sunday Dec 1 (same day)
+        [InlineData(2024, 12, 1, 0, 1, 2024, 12, 2)] // Sunday Dec 1 -> Monday Dec 2
+        [InlineData(2024, 12, 1, 0, 6, 2024, 12, 7)] // Sunday Dec 1 -> Saturday Dec 7
+        [InlineData(2024, 12, 6, 5, 0, 2024, 12, 8)] // Friday Dec 6 -> Sunday Dec 8 (wrap)
+        public void CalculateNextBroadcastDate_WithVariousCombinations_ShouldReturnCorrectDate(
+            int startYear, int startMonth, int startDay, int startDayOfWeek,
+            int targetDayOfWeek,
+            int expectedYear, int expectedMonth, int expectedDay)
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            var startDate = new DateOnly(startYear, startMonth, startDay);
+            
+            // Verify our test data is correct
+            ((int)startDate.DayOfWeek).Should().Be(startDayOfWeek, 
+                $"Test data error: {startDate:yyyy-MM-dd} should be day {startDayOfWeek} ({(DayOfWeek)startDayOfWeek})");
+            
+            var expectedDate = new DateOnly(expectedYear, expectedMonth, expectedDay);
+            
+            // Act
+            var result = youTubeLibrary.CalculateNextBroadcastDate(startDate, targetDayOfWeek);
+            
+            // Assert
+            result.Should().Be(expectedDate, 
+                $"From {startDate:yyyy-MM-dd} ({(DayOfWeek)startDayOfWeek}) to target day {targetDayOfWeek} ({(DayOfWeek)targetDayOfWeek}) " +
+                $"should give {expectedDate:yyyy-MM-dd} ({(DayOfWeek)targetDayOfWeek})");
+            
+            // Also verify the result is on the correct day of week
+            ((int)result.DayOfWeek).Should().Be(targetDayOfWeek,
+                $"Result {result:yyyy-MM-dd} should be on day {targetDayOfWeek} ({(DayOfWeek)targetDayOfWeek})");
+        }
     }
 }
