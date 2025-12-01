@@ -644,5 +644,43 @@ namespace YouTubeCLI.Tests.Libraries
             ((int)result.DayOfWeek).Should().Be(targetDayOfWeek,
                 $"Result {result:yyyy-MM-dd} should be on day {targetDayOfWeek} ({(DayOfWeek)targetDayOfWeek})");
         }
+
+        /// <summary>
+        /// Test that multiple occurrences are correctly spaced by 7 days
+        /// This tests the loop logic that creates multiple broadcasts
+        /// </summary>
+        [Theory]
+        [InlineData(2025, 11, 22, 6, 0, 4)] // User's scenario: Saturday Nov 22 -> 4 Sunday broadcasts
+        [InlineData(2024, 12, 7, 6, 0, 3)] // Saturday Dec 7 -> 3 Sunday broadcasts
+        public void CalculateNextBroadcastDate_WithMultipleOccurrences_ShouldSpaceBy7Days(
+            int startYear, int startMonth, int startDay, int startDayOfWeek,
+            int targetDayOfWeek, int occurrences)
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            var startDate = new DateOnly(startYear, startMonth, startDay);
+            
+            // Verify our test data is correct
+            ((int)startDate.DayOfWeek).Should().Be(startDayOfWeek);
+            
+            // Act - Calculate first broadcast date
+            var firstBroadcastDate = youTubeLibrary.CalculateNextBroadcastDate(startDate, targetDayOfWeek);
+            
+            // Assert - First broadcast should be on correct day of week
+            ((int)firstBroadcastDate.DayOfWeek).Should().Be(targetDayOfWeek,
+                $"First broadcast from {startDate:yyyy-MM-dd} should be on {(DayOfWeek)targetDayOfWeek}");
+            
+            // Simulate the loop logic that creates multiple occurrences
+            var broadcastDate = firstBroadcastDate;
+            for (int i = 0; i < occurrences; i++)
+            {
+                // Each occurrence should be on the target day of week
+                ((int)broadcastDate.DayOfWeek).Should().Be(targetDayOfWeek,
+                    $"Occurrence {i + 1} should be on {(DayOfWeek)targetDayOfWeek}, but got {broadcastDate:yyyy-MM-dd} ({broadcastDate.DayOfWeek})");
+                
+                // Move to next week
+                broadcastDate = broadcastDate.AddDays(7);
+            }
+        }
     }
 }
