@@ -615,6 +615,8 @@ namespace YouTubeCLI.Tests.Libraries
         [InlineData(2024, 12, 1, 0, 1, 2024, 12, 2)] // Sunday Dec 1 -> Monday Dec 2
         [InlineData(2024, 12, 1, 0, 6, 2024, 12, 7)] // Sunday Dec 1 -> Saturday Dec 7
         [InlineData(2024, 12, 6, 5, 0, 2024, 12, 8)] // Friday Dec 6 -> Sunday Dec 8 (wrap)
+        [InlineData(2025, 11, 29, 6, 0, 2025, 11, 30)] // User scenario: Saturday Nov 29, 2025 -> Sunday Nov 30, 2025
+        [InlineData(2025, 11, 30, 0, 0, 2025, 11, 30)] // User scenario: Sunday Nov 30, 2025 -> Sunday Nov 30, 2025 (same day)
         public void CalculateNextBroadcastDate_WithVariousCombinations_ShouldReturnCorrectDate(
             int startYear, int startMonth, int startDay, int startDayOfWeek,
             int targetDayOfWeek,
