@@ -682,5 +682,57 @@ namespace YouTubeCLI.Tests.Libraries
                 broadcastDate = broadcastDate.AddDays(7);
             }
         }
+
+        /// <summary>
+        /// Reproduces user's exact bug: Saturday Nov 22, 2025 creating Monday Nov 24 instead of Sunday Nov 23
+        /// </summary>
+        [Fact]
+        public void CalculateNextBroadcastDate_SaturdayNov22ToSunday_ShouldGiveSundayNov23NotMondayNov24()
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            var saturday = new DateOnly(2025, 11, 22); // Saturday
+            int sunday = 0;
+            
+            // Verify Saturday is actually day 6
+            ((int)saturday.DayOfWeek).Should().Be(6, "Nov 22, 2025 should be Saturday (day 6)");
+            
+            // Act
+            var result = youTubeLibrary.CalculateNextBroadcastDate(saturday, sunday);
+            
+            // Assert - User is getting Monday 11/24 but should get Sunday 11/23
+            var expectedSunday = new DateOnly(2025, 11, 23);
+            var wrongMonday = new DateOnly(2025, 11, 24);
+            
+            result.Should().Be(expectedSunday, 
+                $"Saturday 11/22 to Sunday should give Sunday 11/23, not Monday 11/24. Got: {result:yyyy-MM-dd} ({result.DayOfWeek})");
+            
+            result.Should().NotBe(wrongMonday, "Should not be Monday 11/24");
+            
+            ((int)result.DayOfWeek).Should().Be(0, "Result should be Sunday (day 0)");
+        }
+
+        /// <summary>
+        /// Test Saturday to Monday (if user has dayOfWeek: 1 instead of 0)
+        /// This would explain the user's results: Monday 11/24 and 12/1
+        /// </summary>
+        [Fact]
+        public void CalculateNextBroadcastDate_SaturdayNov22ToMonday_ShouldGiveMondayNov24()
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            var saturday = new DateOnly(2025, 11, 22); // Saturday
+            int monday = 1; // If user has dayOfWeek: 1 instead of 0
+            
+            // Act
+            var result = youTubeLibrary.CalculateNextBroadcastDate(saturday, monday);
+            
+            // Assert
+            var expectedMonday = new DateOnly(2025, 11, 24);
+            result.Should().Be(expectedMonday, 
+                $"Saturday 11/22 to Monday (day 1) should give Monday 11/24");
+            
+            ((int)result.DayOfWeek).Should().Be(1, "Result should be Monday (day 1)");
+        }
     }
 }
