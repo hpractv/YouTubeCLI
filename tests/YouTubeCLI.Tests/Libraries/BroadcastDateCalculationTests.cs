@@ -609,14 +609,14 @@ namespace YouTubeCLI.Tests.Libraries
         /// Direct test of date calculation logic - verifies actual calculated dates
         /// </summary>
         [Theory]
-        [InlineData(2024, 12, 7, 6, 0, 2024, 12, 8)] // Saturday Dec 7 -> Sunday Dec 8
-        [InlineData(2024, 12, 7, 6, 1, 2024, 12, 9)] // Saturday Dec 7 -> Monday Dec 9
-        [InlineData(2024, 12, 1, 0, 0, 2024, 12, 1)] // Sunday Dec 1 -> Sunday Dec 1 (same day)
-        [InlineData(2024, 12, 1, 0, 1, 2024, 12, 2)] // Sunday Dec 1 -> Monday Dec 2
-        [InlineData(2024, 12, 1, 0, 6, 2024, 12, 7)] // Sunday Dec 1 -> Saturday Dec 7
-        [InlineData(2024, 12, 6, 5, 0, 2024, 12, 8)] // Friday Dec 6 -> Sunday Dec 8 (wrap)
-        [InlineData(2025, 11, 29, 6, 0, 2025, 11, 30)] // User scenario: Saturday Nov 29, 2025 -> Sunday Nov 30, 2025
-        [InlineData(2025, 11, 30, 0, 0, 2025, 11, 30)] // User scenario: Sunday Nov 30, 2025 -> Sunday Nov 30, 2025 (same day)
+        [InlineData(2024, 12, 7, 6, 1, 2024, 12, 8)] // Saturday Dec 7 -> Sunday Dec 8 (1-based: 1=Sunday)
+        [InlineData(2024, 12, 7, 6, 2, 2024, 12, 9)] // Saturday Dec 7 -> Monday Dec 9 (1-based: 2=Monday)
+        [InlineData(2024, 12, 1, 0, 1, 2024, 12, 1)] // Sunday Dec 1 -> Sunday Dec 1 (same day, 1-based: 1=Sunday)
+        [InlineData(2024, 12, 1, 0, 2, 2024, 12, 2)] // Sunday Dec 1 -> Monday Dec 2 (1-based: 2=Monday)
+        [InlineData(2024, 12, 1, 0, 7, 2024, 12, 7)] // Sunday Dec 1 -> Saturday Dec 7 (1-based: 7=Saturday)
+        [InlineData(2024, 12, 6, 5, 1, 2024, 12, 8)] // Friday Dec 6 -> Sunday Dec 8 (wrap, 1-based: 1=Sunday)
+        [InlineData(2025, 11, 29, 6, 1, 2025, 11, 30)] // User scenario: Saturday Nov 29, 2025 -> Sunday Nov 30, 2025 (1-based: 1=Sunday)
+        [InlineData(2025, 11, 30, 0, 1, 2025, 11, 30)] // User scenario: Sunday Nov 30, 2025 -> Sunday Nov 30, 2025 (same day, 1-based: 1=Sunday)
         public void CalculateNextBroadcastDate_WithVariousCombinations_ShouldReturnCorrectDate(
             int startYear, int startMonth, int startDay, int startDayOfWeek,
             int targetDayOfWeek,
@@ -635,14 +635,17 @@ namespace YouTubeCLI.Tests.Libraries
             // Act
             var result = youTubeLibrary.CalculateNextBroadcastDate(startDate, targetDayOfWeek);
             
+            // Convert 1-based targetDayOfWeek to 0-based for assertion
+            var expected0BasedDay = targetDayOfWeek >= 1 && targetDayOfWeek <= 7 ? targetDayOfWeek - 1 : targetDayOfWeek;
+            
             // Assert
             result.Should().Be(expectedDate, 
-                $"From {startDate:yyyy-MM-dd} ({(DayOfWeek)startDayOfWeek}) to target day {targetDayOfWeek} ({(DayOfWeek)targetDayOfWeek}) " +
-                $"should give {expectedDate:yyyy-MM-dd} ({(DayOfWeek)targetDayOfWeek})");
+                $"From {startDate:yyyy-MM-dd} ({(DayOfWeek)startDayOfWeek}) to target day {targetDayOfWeek} (1-based) = {(DayOfWeek)expected0BasedDay} (0-based) " +
+                $"should give {expectedDate:yyyy-MM-dd}");
             
-            // Also verify the result is on the correct day of week
-            ((int)result.DayOfWeek).Should().Be(targetDayOfWeek,
-                $"Result {result:yyyy-MM-dd} should be on day {targetDayOfWeek} ({(DayOfWeek)targetDayOfWeek})");
+            // Also verify the result is on the correct day of week (in 0-based)
+            ((int)result.DayOfWeek).Should().Be(expected0BasedDay,
+                $"Result {result:yyyy-MM-dd} should be on day {expected0BasedDay} (0-based) = {(DayOfWeek)expected0BasedDay}");
         }
 
         /// <summary>
@@ -650,8 +653,8 @@ namespace YouTubeCLI.Tests.Libraries
         /// This tests the loop logic that creates multiple broadcasts
         /// </summary>
         [Theory]
-        [InlineData(2025, 11, 22, 6, 0, 4)] // User's scenario: Saturday Nov 22 -> 4 Sunday broadcasts
-        [InlineData(2024, 12, 7, 6, 0, 3)] // Saturday Dec 7 -> 3 Sunday broadcasts
+        [InlineData(2025, 11, 22, 6, 1, 4)] // User's scenario: Saturday Nov 22 -> 4 Sunday broadcasts (1-based: 1=Sunday)
+        [InlineData(2024, 12, 7, 6, 1, 3)] // Saturday Dec 7 -> 3 Sunday broadcasts (1-based: 1=Sunday)
         public void CalculateNextBroadcastDate_WithMultipleOccurrences_ShouldSpaceBy7Days(
             int startYear, int startMonth, int startDay, int startDayOfWeek,
             int targetDayOfWeek, int occurrences)
@@ -666,17 +669,20 @@ namespace YouTubeCLI.Tests.Libraries
             // Act - Calculate first broadcast date
             var firstBroadcastDate = youTubeLibrary.CalculateNextBroadcastDate(startDate, targetDayOfWeek);
             
+            // Convert 1-based to 0-based for assertion
+            var expected0BasedDay = targetDayOfWeek >= 1 && targetDayOfWeek <= 7 ? targetDayOfWeek - 1 : targetDayOfWeek;
+            
             // Assert - First broadcast should be on correct day of week
-            ((int)firstBroadcastDate.DayOfWeek).Should().Be(targetDayOfWeek,
-                $"First broadcast from {startDate:yyyy-MM-dd} should be on {(DayOfWeek)targetDayOfWeek}");
+            ((int)firstBroadcastDate.DayOfWeek).Should().Be(expected0BasedDay,
+                $"First broadcast from {startDate:yyyy-MM-dd} should be on {(DayOfWeek)expected0BasedDay}");
             
             // Simulate the loop logic that creates multiple occurrences
             var broadcastDate = firstBroadcastDate;
             for (int i = 0; i < occurrences; i++)
             {
                 // Each occurrence should be on the target day of week
-                ((int)broadcastDate.DayOfWeek).Should().Be(targetDayOfWeek,
-                    $"Occurrence {i + 1} should be on {(DayOfWeek)targetDayOfWeek}, but got {broadcastDate:yyyy-MM-dd} ({broadcastDate.DayOfWeek})");
+                ((int)broadcastDate.DayOfWeek).Should().Be(expected0BasedDay,
+                    $"Occurrence {i + 1} should be on {(DayOfWeek)expected0BasedDay}, but got {broadcastDate:yyyy-MM-dd} ({broadcastDate.DayOfWeek})");
                 
                 // Move to next week
                 broadcastDate = broadcastDate.AddDays(7);
@@ -692,7 +698,7 @@ namespace YouTubeCLI.Tests.Libraries
             // Arrange
             var youTubeLibrary = new YouTubeLibrary();
             var saturday = new DateOnly(2025, 11, 22); // Saturday
-            int sunday = 0;
+            int sunday = 1; // 1-based: 1 = Sunday
             
             // Verify Saturday is actually day 6
             ((int)saturday.DayOfWeek).Should().Be(6, "Nov 22, 2025 should be Saturday (day 6)");
@@ -705,11 +711,11 @@ namespace YouTubeCLI.Tests.Libraries
             var wrongMonday = new DateOnly(2025, 11, 24);
             
             result.Should().Be(expectedSunday, 
-                $"Saturday 11/22 to Sunday should give Sunday 11/23, not Monday 11/24. Got: {result:yyyy-MM-dd} ({result.DayOfWeek})");
+                $"Saturday 11/22 with dayOfWeek=1 (1-based Sunday) should give Sunday 11/23, not Monday 11/24. Got: {result:yyyy-MM-dd} ({result.DayOfWeek})");
             
             result.Should().NotBe(wrongMonday, "Should not be Monday 11/24");
             
-            ((int)result.DayOfWeek).Should().Be(0, "Result should be Sunday (day 0)");
+            result.DayOfWeek.Should().Be(DayOfWeek.Sunday);
         }
 
         /// <summary>
@@ -722,7 +728,7 @@ namespace YouTubeCLI.Tests.Libraries
             // Arrange
             var youTubeLibrary = new YouTubeLibrary();
             var saturday = new DateOnly(2025, 11, 22); // Saturday
-            int monday = 1; // If user has dayOfWeek: 1 instead of 0
+            int monday = 2; // 1-based: 2 = Monday (since 1 = Sunday)
             
             // Act
             var result = youTubeLibrary.CalculateNextBroadcastDate(saturday, monday);
@@ -730,9 +736,35 @@ namespace YouTubeCLI.Tests.Libraries
             // Assert
             var expectedMonday = new DateOnly(2025, 11, 24);
             result.Should().Be(expectedMonday, 
-                $"Saturday 11/22 to Monday (day 1) should give Monday 11/24");
+                $"Saturday 11/22 to Monday (day 2 in 1-based) should give Monday 11/24");
             
-            ((int)result.DayOfWeek).Should().Be(1, "Result should be Monday (day 1)");
+            result.DayOfWeek.Should().Be(DayOfWeek.Monday);
+        }
+
+        /// <summary>
+        /// Test 1-based indexing: Friday Nov 28, 2025 with dayOfWeek=1 (1-based Sunday) should give Sunday Nov 30
+        /// This is the exact user scenario that was reported
+        /// </summary>
+        [Fact]
+        public void CalculateNextBroadcastDate_FridayNov28WithDayOfWeek1_ShouldGiveSundayNov30()
+        {
+            // Arrange
+            var youTubeLibrary = new YouTubeLibrary();
+            var friday = new DateOnly(2025, 11, 28); // Friday
+            int dayOfWeek1Based = 1; // 1-based: 1 = Sunday
+            
+            // Verify Friday
+            friday.DayOfWeek.Should().Be(DayOfWeek.Friday);
+            
+            // Act
+            var result = youTubeLibrary.CalculateNextBroadcastDate(friday, dayOfWeek1Based);
+            
+            // Assert - Should give Sunday Nov 30, not Monday Dec 1
+            var expectedSunday = new DateOnly(2025, 11, 30);
+            result.Should().Be(expectedSunday, 
+                $"Friday 11/28 with dayOfWeek=1 (1-based Sunday) should give Sunday 11/30, not Monday 12/1");
+            
+            result.DayOfWeek.Should().Be(DayOfWeek.Sunday);
         }
     }
 }

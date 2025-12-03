@@ -108,22 +108,34 @@ namespace YouTubeCLI.Libraries
 
         /// <summary>
         /// Calculates the next occurrence of a target day of the week from a given start date.
+        /// Supports both 0-based (0=Sunday...6=Saturday) and 1-based (1=Sunday...7=Saturday) day-of-week values.
         /// </summary>
         /// <param name="startDate">The starting date</param>
-        /// <param name="targetDayOfWeek">The target day of the week (0=Sunday, 6=Saturday)</param>
+        /// <param name="targetDayOfWeek">The target day of the week. Accepts 0-6 (0-based) or 1-7 (1-based)</param>
         /// <returns>The next occurrence of the target day of the week</returns>
         internal DateOnly CalculateNextBroadcastDate(DateOnly startDate, int targetDayOfWeek)
         {
+            // Validate input range first
+            if (targetDayOfWeek < 0 || targetDayOfWeek > 7)
+            {
+                throw new ArgumentException($"Invalid dayOfWeek value: {targetDayOfWeek}. Expected 0-6 (0-based) or 1-7 (1-based).", nameof(targetDayOfWeek));
+            }
+
+            // Convert from 1-based (1=Sunday, 2=Monday, ..., 7=Saturday) to 0-based (0=Sunday, 1=Monday, ..., 6=Saturday)
+            // If targetDayOfWeek is already 0-based (0-6), value 0 passes through as Sunday
+            // If it's 1-based (1-7), we subtract 1 to convert to 0-based
+            var normalizedTargetDay = targetDayOfWeek >= 1 && targetDayOfWeek <= 7 ? targetDayOfWeek - 1 : targetDayOfWeek;
+
             var startDayOfWeek = (int)startDate.DayOfWeek;
 
-            if (startDayOfWeek == targetDayOfWeek)
+            if (startDayOfWeek == normalizedTargetDay)
             {
                 // If the start date is already on the correct day of week, use it
                 return startDate;
             }
             
             // Otherwise, find the next occurrence of that day of the week
-            var daysToAdd = (7 + targetDayOfWeek - startDayOfWeek) % 7;
+            var daysToAdd = (7 + normalizedTargetDay - startDayOfWeek) % 7;
             return startDate.AddDays(daysToAdd);
         }
 
