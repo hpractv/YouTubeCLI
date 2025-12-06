@@ -108,23 +108,22 @@ namespace YouTubeCLI.Libraries
 
         /// <summary>
         /// Calculates the next occurrence of a target day of the week from a given start date.
-        /// Supports both 0-based (0=Sunday...6=Saturday) and 1-based (1=Sunday...7=Saturday) day-of-week values.
+        /// Uses 1-based day-of-week indexing (1=Sunday, 2=Monday, ..., 7=Saturday).
         /// </summary>
         /// <param name="startDate">The starting date</param>
-        /// <param name="targetDayOfWeek">The target day of the week. Accepts 0-6 (0-based) or 1-7 (1-based)</param>
+        /// <param name="targetDayOfWeek">The target day of the week (1-7, where 1=Sunday, 7=Saturday)</param>
         /// <returns>The next occurrence of the target day of the week</returns>
         internal DateOnly CalculateNextBroadcastDate(DateOnly startDate, int targetDayOfWeek)
         {
-            // Validate input range first
-            if (targetDayOfWeek < 0 || targetDayOfWeek > 7)
+            // Validate input range - only accept 1-7 (1-based indexing)
+            if (targetDayOfWeek < 1 || targetDayOfWeek > 7)
             {
-                throw new ArgumentException($"Invalid dayOfWeek value: {targetDayOfWeek}. Expected 0-6 (0-based) or 1-7 (1-based).", nameof(targetDayOfWeek));
+                throw new ArgumentException($"Invalid dayOfWeek value: {targetDayOfWeek}. Expected 1-7 (1=Sunday, 2=Monday, ..., 7=Saturday).", nameof(targetDayOfWeek));
             }
 
-            // Convert from 1-based (1=Sunday, 2=Monday, ..., 7=Saturday) to 0-based (0=Sunday, 1=Monday, ..., 6=Saturday)
-            // If targetDayOfWeek is already 0-based (0-6), value 0 passes through as Sunday
-            // If it's 1-based (1-7), we subtract 1 to convert to 0-based
-            var normalizedTargetDay = targetDayOfWeek >= 1 && targetDayOfWeek <= 7 ? targetDayOfWeek - 1 : targetDayOfWeek;
+            // Convert from 1-based user input (1=Sunday, 2=Monday, ..., 7=Saturday) 
+            // to 0-based .NET DayOfWeek enum (0=Sunday, 1=Monday, ..., 6=Saturday)
+            var normalizedTargetDay = targetDayOfWeek - 1;
 
             var startDayOfWeek = (int)startDate.DayOfWeek;
 
