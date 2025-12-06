@@ -9,12 +9,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 using YouTubeCLI.Models;
 using YouTubeCLI.Utilities;
 using YouTubeCLI.Commands;
+
+[assembly: InternalsVisibleTo("YouTubeCLI.Tests")]
 
 namespace YouTubeCLI.Libraries
 {
@@ -103,6 +106,38 @@ namespace YouTubeCLI.Libraries
         private IEnumerable<LiveStream> streams
             => _streams = _streams ?? Task.Run<IEnumerable<LiveStream>>(() => GetLiveStreams()).Result;
 
+        /// <summary>
+        /// Calculates the next occurrence of a target day of the week from a given start date.
+        /// Uses 1-based day-of-week indexing (1=Sunday, 2=Monday, ..., 7=Saturday).
+        /// </summary>
+        /// <param name="startDate">The starting date</param>
+        /// <param name="targetDayOfWeek">The target day of the week (1-7, where 1=Sunday, 7=Saturday)</param>
+        /// <returns>The next occurrence of the target day of the week</returns>
+        internal DateOnly CalculateNextBroadcastDate(DateOnly startDate, int targetDayOfWeek)
+        {
+            // Validate input range - only accept 1-7 (1-based indexing)
+            if (targetDayOfWeek < 1 || targetDayOfWeek > 7)
+            {
+                throw new ArgumentException($"Invalid dayOfWeek value: {targetDayOfWeek}. Expected 1-7 (1=Sunday, 2=Monday, ..., 7=Saturday).", nameof(targetDayOfWeek));
+            }
+
+            // Convert from 1-based user input (1=Sunday, 2=Monday, ..., 7=Saturday) 
+            // to 0-based .NET DayOfWeek enum (0=Sunday, 1=Monday, ..., 6=Saturday)
+            var normalizedTargetDay = targetDayOfWeek - 1;
+
+            var startDayOfWeek = (int)startDate.DayOfWeek;
+
+            if (startDayOfWeek == normalizedTargetDay)
+            {
+                // If the start date is already on the correct day of week, use it
+                return startDate;
+            }
+            
+            // Otherwise, find the next occurrence of that day of the week
+            var daysToAdd = (7 + normalizedTargetDay - startDayOfWeek) % 7;
+            return startDate.AddDays(daysToAdd);
+        }
+
         public async Task<IEnumerable<LiveBroadcastInfo>> BuildBroadCast(
             Broadcast broadcast,
             int occurrences,
@@ -119,22 +154,7 @@ namespace YouTubeCLI.Libraries
             }
 
             // Calculate the correct start date based on day of week
-            DateOnly _nextBroadcastDay;
-            var _startDayOfWeek = (int)_startDate.DayOfWeek;
-            var _targetDayOfWeek = broadcast.dayOfWeek;
-
-            if (_startDayOfWeek == _targetDayOfWeek)
-            {
-                // If the start date is already on the correct day of week, use it
-                _nextBroadcastDay = _startDate;
-            }
-            else
-            {
-                // Otherwise, find the next occurrence of that day of the week
-                var _daysToAdd = (7 + _targetDayOfWeek - _startDayOfWeek) % 7;
-                if (_daysToAdd == 0) _daysToAdd = 7; // If it's the same day, go to next week
-                _nextBroadcastDay = _startDate.AddDays(_daysToAdd);
-            }
+            var _nextBroadcastDay = CalculateNextBroadcastDate(_startDate, broadcast.dayOfWeek);
 
             var _startTime = DateTime.Parse($"{_nextBroadcastDay.ToShortDateString()} {broadcast.broadcastStart}");
             var _stream = streams.Single(s => s.Snippet.Title.ToLower() == broadcast.stream.ToLower());
