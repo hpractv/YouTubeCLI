@@ -58,7 +58,7 @@ namespace YouTubeCLI.Libraries
             }
         }
 
-        private async Task<YouTubeService> GetService()
+        private async Task<YouTubeService> GetServiceAsync()
         {
             if (_service == null)
             {
@@ -88,23 +88,20 @@ namespace YouTubeCLI.Libraries
             return _service;
         }
 
-        private YouTubeService service
-            => _service = _service ?? Task.Run<YouTubeService>(() => GetService()).Result;
-
         private IEnumerable<LiveStream> _streams;
-        private async Task<IEnumerable<LiveStream>> GetLiveStreams()
+        private async Task<IEnumerable<LiveStream>> GetLiveStreamsAsync()
         {
-            var _liveStreamsRequest = (await GetService()).LiveStreams.List(_streamPart);
+            if (_streams != null) return _streams;
+
+            var _liveStreamsRequest = (await GetServiceAsync()).LiveStreams.List(_streamPart);
             _liveStreamsRequest.Mine = true;
             _liveStreamsRequest.MaxResults = 50;
 
             var _liveStreamResponse = await _liveStreamsRequest.ExecuteAsync();
 
-            return _liveStreamResponse.Items.Cast<LiveStream>();
+            return _streams = _liveStreamResponse.Items.Cast<LiveStream>();
 
         }
-        private IEnumerable<LiveStream> streams
-            => _streams = _streams ?? Task.Run<IEnumerable<LiveStream>>(() => GetLiveStreams()).Result;
 
         /// <summary>
         /// Calculates the next occurrence of a target day of the week from a given start date.
@@ -121,7 +118,7 @@ namespace YouTubeCLI.Libraries
                 // If the start date is already on the correct day of week, use it
                 return startDate;
             }
-            
+
             // Otherwise, find the next occurrence of that day of the week
             var daysToAdd = (7 + targetDayOfWeek - startDayOfWeek) % 7;
             return startDate.AddDays(daysToAdd);
@@ -146,13 +143,13 @@ namespace YouTubeCLI.Libraries
             var _nextBroadcastDay = CalculateNextBroadcastDate(_startDate, broadcast.dayOfWeek);
 
             var _startTime = DateTime.Parse($"{_nextBroadcastDay.ToShortDateString()} {broadcast.broadcastStart}");
-            var _stream = streams.Single(s => s.Snippet.Title.ToLower() == broadcast.stream.ToLower());
+            var _stream = (await GetLiveStreamsAsync()).Single(s => s.Snippet.Title.ToLower() == broadcast.stream.ToLower());
             var _builtBroadcasts = new List<LiveBroadcastInfo>();
 
             for (int i = 0; i < (testMode ? 1 : occurrences); i++)
             {
                 var _title = $"{(testMode ? "Test Mode: " : string.Empty)}{broadcast.name} Sacrament - {_startTime.ToShortDateString()}";
-                var _lbInsertRequest = service.LiveBroadcasts.Insert(
+                var _lbInsertRequest = (await GetServiceAsync()).LiveBroadcasts.Insert(
                     new LiveBroadcast()
                     {
                         Snippet = new LiveBroadcastSnippet()
@@ -203,7 +200,7 @@ namespace YouTubeCLI.Libraries
 
         public async Task UpdateBroadcast(string broadcastId, bool? autoStart, bool? autoStop, PrivacyEnum? privacy, bool? chatEnabled = null)
         {
-            var _broadcastsRequest = service.LiveBroadcasts.List(_broadcastPart);
+            var _broadcastsRequest = (await GetServiceAsync()).LiveBroadcasts.List(_broadcastPart);
             _broadcastsRequest.Id = broadcastId;
 
             var _broadcast = (await _broadcastsRequest.ExecuteAsync())
@@ -232,7 +229,9 @@ namespace YouTubeCLI.Libraries
                 _broadcast.Status.SelfDeclaredMadeForKids = !chatEnabled.Value;
             }
 
-            var _updateRequest = service.LiveBroadcasts.Update(_broadcast, _broadcastPart);
+
+
+            var _updateRequest = (await GetServiceAsync()).LiveBroadcasts.Update(_broadcast, _broadcastPart);
             await _updateRequest.ExecuteAsync();
         }
 
@@ -266,13 +265,17 @@ namespace YouTubeCLI.Libraries
                     ".jpg" or ".jpeg" => "image/jpeg",
                     _ => "application/octet-stream"
                 };
-                var _thumbnailRequest = service.Thumbnails.Set(videoId, _thumbnail, _type);
-                await _thumbnailRequest.UploadAsync();
+                var _thumbnailRequest = (await GetServiceAsync()).Thumbnails.Set(videoId, _thumbnail, _type);
+                var response = await _thumbnailRequest.UploadAsync();
+                if (response.Status == Google.Apis.Upload.UploadStatus.Failed)
+                {
+                     Console.WriteLine($"Thumbnail upload failed: {response.Exception?.Message}");
+                }
             }
         }
         private async Task<LiveBroadcastSnippet> SetStream(string videoId, string streamId)
         {
-            var _brInsertRequest = service.LiveBroadcasts.Bind(videoId, _broadcastPart);
+            var _brInsertRequest = (await GetServiceAsync()).LiveBroadcasts.Bind(videoId, _broadcastPart);
             _brInsertRequest.StreamId = streamId;
             var _broadcast = await _brInsertRequest.ExecuteAsync();
             return _broadcast.Snippet;
@@ -280,12 +283,12 @@ namespace YouTubeCLI.Libraries
 
         public async Task<IEnumerable<LiveBroadcast>> ListBroadcasts(string parts = _broadcastPart, string broadcastStatus = "all")
         {
-            var _listRequest = service.LiveBroadcasts.List(_broadcastPart);
-            
+            var _listRequest = (await GetServiceAsync()).LiveBroadcasts.List(_broadcastPart);
+
             // Note: According to YouTube API docs, Mine and BroadcastStatus parameters are incompatible
             // When BroadcastStatus is not "all", we use BroadcastStatus parameter
             // When BroadcastStatus is "all", we use Mine parameter instead
-            
+
             switch (broadcastStatus.ToLowerInvariant())
             {
                 case "all":
