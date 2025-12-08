@@ -40,7 +40,7 @@ namespace YouTubeCLI.Commands
         public bool? AutoStop { get; set; }
 
         [Option("-p|--privacy", "Set privacy to public, unlisted, or private",
-            CommandOptionType.SingleOrNoValue)]
+            CommandOptionType.SingleValue)]
         public PrivacyEnum? Privacy { get; set; }
 
         [Option("-e|--chat-enabled <value>", "Set chat enabled to true or false",
