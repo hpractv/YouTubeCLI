@@ -229,8 +229,6 @@ namespace YouTubeCLI.Libraries
                 _broadcast.Status.SelfDeclaredMadeForKids = !chatEnabled.Value;
             }
 
-
-
             var _updateRequest = (await GetServiceAsync()).LiveBroadcasts.Update(_broadcast, _broadcastPart);
             await _updateRequest.ExecuteAsync();
         }
