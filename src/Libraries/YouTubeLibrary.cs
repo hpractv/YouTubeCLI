@@ -267,7 +267,7 @@ namespace YouTubeCLI.Libraries
                 var response = await _thumbnailRequest.UploadAsync();
                 if (response.Status == Google.Apis.Upload.UploadStatus.Failed)
                 {
-                     Console.WriteLine($"Thumbnail upload failed: {response.Exception?.Message}");
+                     throw new Exception($"Thumbnail upload failed: {response.Exception?.Message}");
                 }
             }
         }
