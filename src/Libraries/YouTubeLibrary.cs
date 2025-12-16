@@ -188,11 +188,10 @@ namespace YouTubeCLI.Libraries
                     }, _broadcastPart);
 
                 var _broadcast = await _lbInsertRequest.ExecuteAsync();
-                var _streamSnippet = SetStream(_broadcast.Id, _stream.Id);
-                Task.WaitAll(new[] {
-                    SetBroadcastThumbnail(_broadcast.Id, thumbnailDirectory, broadcast.thumbnail),
-                        _streamSnippet
-                    });
+                // Bind the stream first - this must complete before setting thumbnail
+                await SetStream(_broadcast.Id, _stream.Id);
+                // Now set the thumbnail after the broadcast is fully configured
+                await SetBroadcastThumbnail(_broadcast.Id, thumbnailDirectory, broadcast.thumbnail);
                 _builtBroadcasts.Add(new LiveBroadcastInfo
                 {
                     broadcast = broadcast.id,
