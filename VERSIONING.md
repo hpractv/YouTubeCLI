@@ -91,9 +91,8 @@ All release files include version numbers:
 When a release is created, the version is automatically appended to all release files:
 
 - `ytc-windows-x64-1.0.0.zip`
-- `ytc-windows-x86-1.0.0.zip`
+- `ytc-windows-arm64-1.0.0.zip`
 - `ytc-macos-arm64-1.0.0.zip`
-- `ytc-macos-x64-1.0.0.zip`
 - `ytc-linux-x64-1.0.0.tar.gz`
 - `ytc-linux-arm64-1.0.0.tar.gz`
 

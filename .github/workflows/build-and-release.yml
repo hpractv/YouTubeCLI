@@ -413,17 +413,17 @@ jobs:
         run: |
           dotnet publish ${{ env.PROJECT_PATH }} -r win-x64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/windows-x64
 
-      - name: Build Windows x86
+      - name: Build Windows ARM64
         run: |
-          dotnet publish ${{ env.PROJECT_PATH }} -r win-x86 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/windows-x86
+          dotnet publish ${{ env.PROJECT_PATH }} -r win-arm64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/windows-arm64
 
       - name: Create Windows x64 Archive
         run: |
           Compress-Archive -Path ./dist/windows-x64/* -DestinationPath ./dist/ytc-windows-x64.zip
 
-      - name: Create Windows x86 Archive
+      - name: Create Windows ARM64 Archive
         run: |
-          Compress-Archive -Path ./dist/windows-x86/* -DestinationPath ./dist/ytc-windows-x86.zip
+          Compress-Archive -Path ./dist/windows-arm64/* -DestinationPath ./dist/ytc-windows-arm64.zip
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
@@ -466,19 +466,10 @@ jobs:
         run: |
           dotnet publish ${{ env.PROJECT_PATH }} -r osx-arm64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/macos-arm64
 
-      - name: Build macOS x64
-        run: |
-          dotnet publish ${{ env.PROJECT_PATH }} -r osx-x64 -c Release --self-contained -p:PublishSingleFile=true -o ./dist/macos-x64
-
       - name: Create macOS ARM64 Archive
         run: |
           cd ./dist/macos-arm64
           zip -r ../ytc-macos-arm64.zip ./*
-
-      - name: Create macOS x64 Archive
-        run: |
-          cd ./dist/macos-x64
-          zip -r ../ytc-macos-x64.zip ./*
 
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
@@ -620,11 +611,10 @@ jobs:
         run: |
           # Rename Windows artifacts
           mv ./artifacts/windows/ytc-windows-x64.zip ./artifacts/windows/ytc-windows-x64-${{ steps.version.outputs.version }}.zip
-          mv ./artifacts/windows/ytc-windows-x86.zip ./artifacts/windows/ytc-windows-x86-${{ steps.version.outputs.version }}.zip
+          mv ./artifacts/windows/ytc-windows-arm64.zip ./artifacts/windows/ytc-windows-arm64-${{ steps.version.outputs.version }}.zip
 
           # Rename macOS artifacts
           mv ./artifacts/macos/ytc-macos-arm64.zip ./artifacts/macos/ytc-macos-arm64-${{ steps.version.outputs.version }}.zip
-          mv ./artifacts/macos/ytc-macos-x64.zip ./artifacts/macos/ytc-macos-x64-${{ steps.version.outputs.version }}.zip
 
           # Rename Linux artifacts
           mv ./artifacts/linux/ytc-linux-x64.tar.gz ./artifacts/linux/ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz
@@ -640,9 +630,8 @@ jobs:
 
             **Download the appropriate file for your platform:**
             - **Windows x64**: `ytc-windows-x64-${{ steps.version.outputs.version }}.zip`
-            - **Windows x86**: `ytc-windows-x86-${{ steps.version.outputs.version }}.zip`
+            - **Windows ARM64**: `ytc-windows-arm64-${{ steps.version.outputs.version }}.zip`
             - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64-${{ steps.version.outputs.version }}.zip`
-            - **macOS x64 (Intel)**: `ytc-macos-x64-${{ steps.version.outputs.version }}.zip`
             - **Linux x64**: `ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz`
             - **Linux ARM64**: `ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz`
 
@@ -652,9 +641,8 @@ jobs:
             3. Run the executable: `./ytc` (Linux/macOS) or `ytc.exe` (Windows)
           files: |
             ./artifacts/windows/ytc-windows-x64-${{ steps.version.outputs.version }}.zip
-            ./artifacts/windows/ytc-windows-x86-${{ steps.version.outputs.version }}.zip
+            ./artifacts/windows/ytc-windows-arm64-${{ steps.version.outputs.version }}.zip
             ./artifacts/macos/ytc-macos-arm64-${{ steps.version.outputs.version }}.zip
-            ./artifacts/macos/ytc-macos-x64-${{ steps.version.outputs.version }}.zip
             ./artifacts/linux/ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz
             ./artifacts/linux/ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz
           prerelease: true
@@ -752,11 +740,10 @@ jobs:
         run: |
           # Rename Windows artifacts
           mv ./artifacts/windows/ytc-windows-x64.zip ./artifacts/windows/ytc-windows-x64-${{ steps.version.outputs.version }}.zip
-          mv ./artifacts/windows/ytc-windows-x86.zip ./artifacts/windows/ytc-windows-x86-${{ steps.version.outputs.version }}.zip
+          mv ./artifacts/windows/ytc-windows-arm64.zip ./artifacts/windows/ytc-windows-arm64-${{ steps.version.outputs.version }}.zip
 
           # Rename macOS artifacts
           mv ./artifacts/macos/ytc-macos-arm64.zip ./artifacts/macos/ytc-macos-arm64-${{ steps.version.outputs.version }}.zip
-          mv ./artifacts/macos/ytc-macos-x64.zip ./artifacts/macos/ytc-macos-x64-${{ steps.version.outputs.version }}.zip
 
           # Rename Linux artifacts
           mv ./artifacts/linux/ytc-linux-x64.tar.gz ./artifacts/linux/ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz
@@ -770,9 +757,8 @@ jobs:
           body: |
             **Download the appropriate file for your platform:**
             - **Windows x64**: `ytc-windows-x64-${{ steps.version.outputs.version }}.zip`
-            - **Windows x86**: `ytc-windows-x86-${{ steps.version.outputs.version }}.zip`
+            - **Windows ARM64**: `ytc-windows-arm64-${{ steps.version.outputs.version }}.zip`
             - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64-${{ steps.version.outputs.version }}.zip`
-            - **macOS x64 (Intel)**: `ytc-macos-x64-${{ steps.version.outputs.version }}.zip`
             - **Linux x64**: `ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz`
             - **Linux ARM64**: `ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz`
 
@@ -782,9 +768,8 @@ jobs:
             3. Run the executable: `./ytc` (Linux/macOS) or `ytc.exe` (Windows)
           files: |
             ./artifacts/windows/ytc-windows-x64-${{ steps.version.outputs.version }}.zip
-            ./artifacts/windows/ytc-windows-x86-${{ steps.version.outputs.version }}.zip
+            ./artifacts/windows/ytc-windows-arm64-${{ steps.version.outputs.version }}.zip
             ./artifacts/macos/ytc-macos-arm64-${{ steps.version.outputs.version }}.zip
-            ./artifacts/macos/ytc-macos-x64-${{ steps.version.outputs.version }}.zip
             ./artifacts/linux/ytc-linux-x64-${{ steps.version.outputs.version }}.tar.gz
             ./artifacts/linux/ytc-linux-arm64-${{ steps.version.outputs.version }}.tar.gz
           prerelease: false
@@ -865,11 +850,10 @@ jobs:
           NEW_VERSION="${{ needs.increment-version.outputs.new_version }}"
           # Rename Windows artifacts
           mv ./artifacts/windows/ytc-windows-x64.zip ./artifacts/windows/ytc-windows-x64-$NEW_VERSION.zip
-          mv ./artifacts/windows/ytc-windows-x86.zip ./artifacts/windows/ytc-windows-x86-$NEW_VERSION.zip
+          mv ./artifacts/windows/ytc-windows-arm64.zip ./artifacts/windows/ytc-windows-arm64-$NEW_VERSION.zip
           
           # Rename macOS artifacts
           mv ./artifacts/macos/ytc-macos-arm64.zip ./artifacts/macos/ytc-macos-arm64-$NEW_VERSION.zip
-          mv ./artifacts/macos/ytc-macos-x64.zip ./artifacts/macos/ytc-macos-x64-$NEW_VERSION.zip
           
           # Rename Linux artifacts
           mv ./artifacts/linux/ytc-linux-x64.tar.gz ./artifacts/linux/ytc-linux-x64-$NEW_VERSION.tar.gz
@@ -887,9 +871,8 @@ jobs:
             
             **Download the appropriate file for your platform:**
             - **Windows x64**: `ytc-windows-x64-${{ needs.increment-version.outputs.new_version }}.zip`
-            - **Windows x86**: `ytc-windows-x86-${{ needs.increment-version.outputs.new_version }}.zip`
+            - **Windows ARM64**: `ytc-windows-arm64-${{ needs.increment-version.outputs.new_version }}.zip`
             - **macOS ARM64 (Apple Silicon)**: `ytc-macos-arm64-${{ needs.increment-version.outputs.new_version }}.zip`
-            - **macOS x64 (Intel)**: `ytc-macos-x64-${{ needs.increment-version.outputs.new_version }}.zip`
             - **Linux x64**: `ytc-linux-x64-${{ needs.increment-version.outputs.new_version }}.tar.gz`
             - **Linux ARM64**: `ytc-linux-arm64-${{ needs.increment-version.outputs.new_version }}.tar.gz`
             
@@ -899,9 +882,8 @@ jobs:
             3. Run the executable: `./ytc` (Linux/macOS) or `ytc.exe` (Windows)
           files: |
             ./artifacts/windows/ytc-windows-x64-${{ needs.increment-version.outputs.new_version }}.zip
-            ./artifacts/windows/ytc-windows-x86-${{ needs.increment-version.outputs.new_version }}.zip
+            ./artifacts/windows/ytc-windows-arm64-${{ needs.increment-version.outputs.new_version }}.zip
             ./artifacts/macos/ytc-macos-arm64-${{ needs.increment-version.outputs.new_version }}.zip
-            ./artifacts/macos/ytc-macos-x64-${{ needs.increment-version.outputs.new_version }}.zip
             ./artifacts/linux/ytc-linux-x64-${{ needs.increment-version.outputs.new_version }}.tar.gz
             ./artifacts/linux/ytc-linux-arm64-${{ needs.increment-version.outputs.new_version }}.tar.gz
           prerelease: false
