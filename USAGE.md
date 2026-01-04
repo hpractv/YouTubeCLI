@@ -306,24 +306,38 @@ Create a JSON file with your broadcast settings:
 
 ```json
 {
-  "items": [
+  "broadcasts": [
     {
       "id": "broadcast1",
       "name": "My Weekly Stream",
-      "description": "Weekly programming stream",
       "active": true,
-      "title": "Weekly Programming Stream",
-      "description": "Join me for weekly programming discussions",
-      "thumbnail": "thumbnail.jpg",
+      "dayOfWeek": 1,
+      "broadcastStart": "10:00 AM",
+      "broadcastDurationInMinutes": 60,
+      "stream": "my-stream",
       "privacy": "public",
       "autoStart": true,
       "autoStop": true,
-      "startTime": "2024-01-15T19:00:00Z",
-      "endTime": "2024-01-15T21:00:00Z"
+      "chatEnabled": true,
+      "thumbnail": "thumbnail.jpg"
     }
   ]
 }
 ```
+
+**Configuration Properties:**
+- `id` (string, required): Unique identifier for the broadcast
+- `name` (string, required): Name of the broadcast
+- `active` (boolean, required): Whether the broadcast is active
+- `dayOfWeek` (integer, required): Day of the week (1=Sunday, 2=Monday, ..., 7=Saturday)
+- `broadcastStart` (string, required): Start time in format "HH:MM AM/PM"
+- `broadcastDurationInMinutes` (integer, required): Duration of the broadcast in minutes
+- `stream` (string, required): Name of the stream to bind to
+- `privacy` (string, required): Privacy setting ("public", "private", or "unlisted")
+- `autoStart` (boolean, required): Enable automatic start
+- `autoStop` (boolean, required): Enable automatic stop
+- `chatEnabled` (boolean, required): Enable chat for the broadcast
+- `thumbnail` (string, required): Filename of the thumbnail image
 
 ### Client Secrets File
 
